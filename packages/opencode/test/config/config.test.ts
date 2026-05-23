@@ -1,6 +1,6 @@
 import { test, expect, describe, afterEach, beforeEach } from "bun:test"
 import { Effect, Exit, Layer, Option } from "effect"
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
+import { HttpClient } from "effect/unstable/http"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { Config } from "@/config/config"
 import { ConfigManaged } from "@/config/managed"
@@ -9,7 +9,7 @@ import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 
 import { InstanceRef } from "../../src/effect/instance-ref"
 import type { InstanceContext } from "../../src/project/instance-context"
-import { Auth } from "../../src/auth"
+import { AuthWellKnown } from "@opencode-ai/core/auth-well-known"
 import { Account } from "../../src/account/account"
 import { AccessToken, AccountID, OrgID } from "../../src/account/schema"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
@@ -38,54 +38,18 @@ import { ProjectID } from "../../src/project/schema"
 import { Filesystem } from "@/util/filesystem"
 import { ConfigPlugin } from "@/config/plugin"
 import { AccountTest } from "../fake/account"
-import { AuthTest } from "../fake/auth"
 import { NpmTest } from "../fake/npm"
+import { Substitution } from "@opencode-ai/core/substitution"
+import { AuthWellKnownTest } from "../fake/auth-well-known"
 
 const testFlock = EffectFlock.defaultLayer
 
-const unexpectedHttp = HttpClient.make((request) =>
-  Effect.die(`unexpected http request: ${request.method} ${request.url}`),
-)
-
-const json = (request: Parameters<typeof HttpClientResponse.fromWeb>[0], body: unknown, status = 200) =>
-  HttpClientResponse.fromWeb(
-    request,
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { "content-type": "application/json" },
-    }),
-  )
-
-const wellKnownAuth = (url: string) =>
-  Layer.mock(Auth.Service)({
-    all: () =>
-      Effect.succeed({
-        [url]: new Auth.WellKnown({ type: "wellknown", key: "TEST_TOKEN", token: "test-token" }),
-      }),
-  })
-
-function remoteConfigClient(input: {
-  wellKnown: unknown
-  remote?: unknown
-  seen: { wellKnown?: string; remote?: string; authorization?: string }
-}) {
-  return HttpClient.make((request) => {
-    if (request.url.includes(".well-known/opencode")) {
-      input.seen.wellKnown = request.url
-      return Effect.succeed(json(request, input.wellKnown))
-    }
-    if (input.remote !== undefined && request.url.includes("config.example.com")) {
-      input.seen.remote = request.url
-      input.seen.authorization = request.headers.authorization
-      return Effect.succeed(json(request, input.remote))
-    }
-    return Effect.succeed(json(request, {}, 404))
-  })
-}
+const runSubstitution = <A, E>(effect: Effect.Effect<A, E, Substitution.Service>) =>
+  Effect.runPromise(effect.pipe(Effect.provide(Substitution.defaultLayer)))
 
 const configLayer = (
   options: {
-    auth?: Layer.Layer<Auth.Service>
+    wellKnown?: Layer.Layer<AuthWellKnown.Service>
     account?: Layer.Layer<Account.Service>
     client?: HttpClient.HttpClient
   } = {},
@@ -93,12 +57,18 @@ const configLayer = (
   Config.layer.pipe(
     Layer.provide(testFlock),
     Layer.provide(AppFileSystem.defaultLayer),
+    Layer.provide(Substitution.defaultLayer),
     Layer.provide(Env.defaultLayer),
-    Layer.provide(options.auth ?? AuthTest.empty),
+    Layer.provide(options.wellKnown ?? AuthWellKnownTest.empty),
     Layer.provide(options.account ?? AccountTest.empty),
     Layer.provideMerge(infra),
     Layer.provide(NpmTest.noop),
-    Layer.provide(Layer.succeed(HttpClient.HttpClient, options.client ?? unexpectedHttp)),
+    Layer.provide(
+      Layer.succeed(
+        HttpClient.HttpClient,
+        options.client ?? HttpClient.make((request) => Effect.die(`unexpected http request: ${request.method} ${request.url}`)),
+      ),
+    ),
   )
 
 const layer = configLayer()
@@ -477,13 +447,36 @@ it.instance("handles environment variable substitution", () =>
   ),
 )
 
+test("environment variable substitution accepts an env overlay", async () => {
+  const originalEnv = process.env["TEST_VAR"]
+  delete process.env["TEST_VAR"]
+
+  try {
+    expect(
+      await runSubstitution(
+        Substitution.Service.use((substitution) =>
+          substitution.substitute({
+            text: "{env:TEST_VAR}",
+            type: "virtual",
+            dir: "/tmp",
+            source: "test",
+            env: { TEST_VAR: "overlay" },
+          }),
+        ),
+      ),
+    ).toBe("overlay")
+  } finally {
+    if (originalEnv === undefined) delete process.env["TEST_VAR"]
+    else process.env["TEST_VAR"] = originalEnv
+  }
+})
+
 it.instance("preserves env variables when adding $schema to config", () =>
   withProcessEnv(
     "PRESERVE_VAR",
     "secret_value",
     Effect.gen(function* () {
       const test = yield* TestInstance
-      // Config without $schema - should trigger auto-add
       yield* Effect.promise(() =>
         Filesystem.write(
           path.join(test.directory, "opencode.json"),
@@ -495,7 +488,6 @@ it.instance("preserves env variables when adding $schema to config", () =>
       const config = yield* Config.use.get()
       expect(config.username).toBe("secret_value")
 
-      // Read the file to verify the env variable was preserved
       const content = yield* Effect.promise(() => Filesystem.readText(path.join(test.directory, "opencode.json")))
       expect(content).toContain("{env:PRESERVE_VAR}")
       expect(content).not.toContain("secret_value")
@@ -1584,22 +1576,25 @@ it.instance("local .opencode config can override MCP from project config", () =>
 )
 
 test("project config overrides remote well-known config", async () => {
-  const seen: { wellKnown?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      config: {
-        mcp: { jira: { type: "remote", url: "https://jira.example.com/mcp", enabled: false } },
-      },
-    },
+  const fakeAuthWellKnown = Layer.mock(AuthWellKnown.Service)({
+    all: () => Effect.succeed({}),
+    configs: () =>
+      Effect.succeed([
+        {
+          url: "https://example.com",
+          source: "https://example.com/.well-known/opencode",
+          dir: "https://example.com/.well-known",
+          content: {
+            mcp: { jira: { type: "remote", url: "https://jira.example.com/mcp", enabled: false } },
+          },
+        },
+      ]),
   })
-
   await provideTmpdirInstance(
     () =>
       Config.Service.use((svc) =>
         Effect.gen(function* () {
           const config = yield* svc.get()
-          expect(seen.wellKnown).toBe("https://example.com/.well-known/opencode")
           expect(config.mcp?.jira?.enabled).toBe(true)
         }),
       ),
@@ -1607,223 +1602,7 @@ test("project config overrides remote well-known config", async () => {
       git: true,
       config: { mcp: { jira: { type: "remote", url: "https://jira.example.com/mcp", enabled: true } } },
     },
-  ).pipe(
-    Effect.scoped,
-    Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com"), client })),
-    Effect.runPromise,
-  )
-})
-
-test("wellknown URL with trailing slash is normalized", async () => {
-  const seen: { wellKnown?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      config: {
-        mcp: { slack: { type: "remote", url: "https://slack.example.com/mcp", enabled: true } },
-      },
-    },
-  })
-
-  await provideTmpdirInstance(
-    () =>
-      Config.Service.use((svc) =>
-        Effect.gen(function* () {
-          yield* svc.get()
-          expect(seen.wellKnown).toBe("https://example.com/.well-known/opencode")
-        }),
-      ),
-    { git: true },
-  ).pipe(
-    Effect.scoped,
-    Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com/"), client })),
-    Effect.runPromise,
-  )
-})
-
-test("remote well-known config can use FetchHttpClient layer", async () => {
-  let fetchedUrl: string | undefined
-  const server = Bun.serve({
-    port: 0,
-    fetch: (request) => {
-      fetchedUrl = request.url
-      return new Response(
-        JSON.stringify({
-          config: {
-            mcp: { jira: { type: "remote", url: "https://jira.example.com/mcp", enabled: true } },
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )
-    },
-  })
-
-  try {
-    await provideTmpdirInstance(
-      () =>
-        Config.Service.use((svc) =>
-          Effect.gen(function* () {
-            const config = yield* svc.get()
-            expect(fetchedUrl).toBe(`${server.url.origin}/.well-known/opencode`)
-            expect(config.mcp?.jira?.enabled).toBe(true)
-          }),
-        ),
-      { git: true },
-    ).pipe(
-      Effect.scoped,
-      Effect.provide(
-        Config.layer.pipe(
-          Layer.provide(testFlock),
-          Layer.provide(AppFileSystem.defaultLayer),
-          Layer.provide(Env.defaultLayer),
-          Layer.provide(wellKnownAuth(server.url.origin)),
-          Layer.provide(AccountTest.empty),
-          Layer.provideMerge(infra),
-          Layer.provide(NpmTest.noop),
-          Layer.provide(FetchHttpClient.layer),
-        ),
-      ),
-      Effect.runPromise,
-    )
-  } finally {
-    await server.stop(true)
-  }
-})
-
-test("wellknown remote_config supports templated env vars in headers", async () => {
-  const originalToken = process.env.TEST_TOKEN
-  const seen: { wellKnown?: string; remote?: string; authorization?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      remote_config: {
-        url: "https://config.example.com/opencode.json",
-        headers: {
-          Authorization: "Bearer {env:TEST_TOKEN}",
-        },
-      },
-    },
-    remote: {
-      mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: true } },
-    },
-  })
-
-  try {
-    await provideTmpdirInstance(
-      () =>
-        Config.Service.use((svc) =>
-          Effect.gen(function* () {
-            const config = yield* svc.get()
-            expect(seen.wellKnown).toBe("https://example.com/.well-known/opencode")
-            expect(seen.remote).toBe("https://config.example.com/opencode.json")
-            expect(seen.authorization).toBe("Bearer test-token")
-            expect(config.mcp?.confluence?.enabled).toBe(true)
-          }),
-        ),
-      { git: true },
-    ).pipe(
-      Effect.scoped,
-      Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com"), client })),
-      Effect.runPromise,
-    )
-  } finally {
-    if (originalToken === undefined) delete process.env.TEST_TOKEN
-    else process.env.TEST_TOKEN = originalToken
-  }
-})
-
-test("wellknown token env substitution does not mutate process env", async () => {
-  const originalToken = process.env.TEST_TOKEN
-  process.env.TEST_TOKEN = "preexisting-token"
-  const seen: { wellKnown?: string; remote?: string; authorization?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      remote_config: {
-        url: "https://config.example.com/opencode.json",
-        headers: {
-          Authorization: "Bearer {env:TEST_TOKEN}",
-        },
-      },
-    },
-    remote: {
-      mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: true } },
-    },
-  })
-
-  try {
-    const config = await provideTmpdirInstance(() => Config.Service.use((svc) => svc.get()), {
-      git: true,
-      config: { username: "{env:TEST_TOKEN}" },
-    }).pipe(
-      Effect.scoped,
-      Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com"), client })),
-      Effect.runPromise,
-    )
-
-    expect(seen.authorization).toBe("Bearer test-token")
-    expect(config.username).toBe("test-token")
-    expect(process.env.TEST_TOKEN).toBe("preexisting-token")
-  } finally {
-    if (originalToken === undefined) delete process.env.TEST_TOKEN
-    else process.env.TEST_TOKEN = originalToken
-  }
-})
-
-test("wellknown config null is treated as absent", async () => {
-  const seen: { wellKnown?: string; remote?: string; authorization?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      config: null,
-      remote_config: {
-        url: "https://config.example.com/opencode.json",
-      },
-    },
-    remote: {
-      mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: true } },
-    },
-  })
-
-  await provideTmpdirInstance(
-    () =>
-      Config.Service.use((svc) =>
-        Effect.gen(function* () {
-          const config = yield* svc.get()
-          expect(seen.remote).toBe("https://config.example.com/opencode.json")
-          expect(config.mcp?.confluence?.enabled).toBe(true)
-        }),
-      ),
-    { git: true },
-  ).pipe(
-    Effect.scoped,
-    Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com"), client })),
-    Effect.runPromise,
-  )
-})
-
-test("wellknown remote_config rejects non-object config responses", async () => {
-  const seen: { wellKnown?: string; remote?: string; authorization?: string } = {}
-  const client = remoteConfigClient({
-    seen,
-    wellKnown: {
-      remote_config: {
-        url: "https://config.example.com/opencode.json",
-      },
-    },
-    remote: "not an object",
-  })
-
-  const exit = await provideTmpdirInstance(() => Config.Service.use((svc) => svc.get()).pipe(Effect.exit), {
-    git: true,
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(configLayer({ auth: wellKnownAuth("https://example.com"), client })),
-    Effect.runPromise,
-  )
-
-  expect(seen.remote).toBe("https://config.example.com/opencode.json")
-  expect(Exit.isFailure(exit)).toBe(true)
+  ).pipe(Effect.scoped, Effect.provide(configLayer({ wellKnown: fakeAuthWellKnown })), Effect.runPromise)
 })
 
 describe("resolvePluginSpec", () => {
