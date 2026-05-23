@@ -1,6 +1,19 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "provider": {},
+  // ourapp local dev: route Anthropic traffic through our local LiteLLM Gateway.
+  // The Gateway issues virtual keys via Billing service; paste yours into "apiKey".
+  // The patched anthropic provider auto-detects custom baseURL and switches to
+  // Authorization: Bearer (required by LiteLLM /v1/messages).
+  "provider": {
+    "anthropic": {
+      "options": {
+        "baseURL": "http://localhost:4000",
+        // Replace with the litellm_key returned by Billing /me — for the test user
+        // it's the value of subscription.litellmKey (e.g. sk-nk7YaSwLZijpZj9Gyyisgw).
+        "apiKey": "sk-REPLACE-WITH-VIRTUAL-KEY-FROM-BILLING",
+      },
+    },
+  },
   "permission": {},
   "mcp": {},
   "tools": {

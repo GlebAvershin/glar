@@ -81,6 +81,10 @@ export const Info = Schema.Struct({
       Schema.Struct({
         apiKey: Schema.optional(Schema.String),
         baseURL: Schema.optional(Schema.String),
+        bearer: Schema.optional(Schema.Boolean).annotate({
+          description:
+            "Use Authorization: Bearer instead of x-api-key (required for LiteLLM-fronted Anthropic-style endpoints).",
+        }),
         enterpriseUrl: Schema.optional(Schema.String).annotate({
           description: "GitHub Enterprise URL for copilot authentication",
         }),
