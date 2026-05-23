@@ -14,6 +14,10 @@
       },
     },
   },
+  // Document parsing / DOCX generation tools — exposes `parse_document` and
+  // `generate_docx` to the agent. Without this the agent cannot read attached
+  // contracts or produce Word output.
+  "plugin": ["@ourapp/doc-tools/plugin"],
   "permission": {},
   "mcp": {},
   "tools": {

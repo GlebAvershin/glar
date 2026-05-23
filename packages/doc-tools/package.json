@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@ourapp/doc-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Document parsers (PDF/DOCX/XLSX) and DOCX generator wired as an opencode plugin. Adds parse_document and generate_docx_from_markdown tools to the agent.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./parsers": "./src/parsers/index.ts",
+    "./generators": "./src/generators/index.ts",
+    "./plugin": "./src/plugin.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "unpdf": "^0.12.0",
+    "mammoth": "^1.8.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "docx": "^9.0.0",
+    "@opencode-ai/plugin": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  }
+}
