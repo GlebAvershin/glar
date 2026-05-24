@@ -91,7 +91,41 @@ schema so it can be set without TS errors:
 
 **Change.** Added one optional field to the `Info.options` schema.
 
-### 3. `packages/desktop/electron.vite.config.ts` — bind Vite to 127.0.0.1
+### 3. `packages/desktop/src/renderer/loading.tsx` — recover from missed `init-step` event
+
+**Why.** Race condition in opencode's main↔renderer init flow:
+
+1. Renderer subscribes to `init-step` IPC events via `awaitInitialization((next) => ...)`.
+2. The preload removes the listener as soon as `invoke("await-initialization")`
+   resolves (= when sidecar reports ready).
+3. But the main process emits the **final** `phase: 'done'` step *after* `serverReady`
+   resolves (see `packages/desktop/src/main/index.ts:369–370`).
+4. Renderer never sees `phase: 'done'` → never calls `loadingWindowComplete()`
+   → main process forever blocked on `Deferred.await(loadingComplete)` → splash
+   visible indefinitely.
+
+Only triggers when `needsMigration` is true (fresh DB) AND `loadingTask`
+takes >1s — i.e. on first launch after install. Dev environments with already-
+migrated DBs skip the overlay path so the bug stays hidden.
+
+**Change.** Treat invoke-promise resolution as an implicit `phase: 'done'` —
+the sidecar IS ready by then anyway.
+
+```ts
+window.api
+  .awaitInitialization((next) => setStep(next))
+  .then(() => setStep((s) => (s?.phase === "done" ? s : { phase: "done" })))
+  .catch(() => undefined)
+```
+
+Same as before when the listener happens to see the event; recovers when it
+doesn't.
+
+**Verified.** Before this patch, `bun --cwd packages/desktop run package` →
+`OpenCode Dev.exe` from `dist/win-unpacked/` hangs on splash forever. With
+the patch, splash advances to main window.
+
+### 4. `packages/desktop/electron.vite.config.ts` — bind Vite to 127.0.0.1
 
 **Why.** Default Vite dev server binds to `[::1]:5173` (IPv6 localhost). Electron's
 Chromium resolves `localhost` to `127.0.0.1` (IPv4) → `ERR_CONNECTION_REFUSED` when
@@ -110,7 +144,7 @@ renderer: {
 No effect on Mac/Linux (both IPv4 and IPv6 localhost resolve to the same socket
 there). Required on Windows.
 
-### 4. `.opencode/opencode.jsonc` — local Gateway config scaffold
+### 5. `.opencode/opencode.jsonc` — local Gateway config scaffold
 
 **Why.** Default config for the desktop dev session — points Anthropic provider at
 the local LiteLLM Gateway and uses the patched Bearer auth. Drop your Billing-issued

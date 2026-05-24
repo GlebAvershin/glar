@@ -24,7 +24,16 @@ render(() => {
     return Math.max(25, Math.min(100, percent()))
   })
 
-  window.api.awaitInitialization((next) => setStep(next as InitStep)).catch(() => undefined)
+  // Upstream race: preload removes the "init-step" listener as soon as
+  // ipcRenderer.invoke("await-initialization") resolves (when sidecar is ready).
+  // But the main process emits the final `phase: 'done'` step AFTER serverReady
+  // resolves — so the renderer can miss it and stay on splash forever. We
+  // force `done` here when the promise resolves, regardless of whether the
+  // listener saw the step.
+  window.api
+    .awaitInitialization((next) => setStep(next as InitStep))
+    .then(() => setStep((s) => (s?.phase === "done" ? s : { phase: "done" })))
+    .catch(() => undefined)
 
   onMount(() => {
     setLine(0)
