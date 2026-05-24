@@ -7,14 +7,42 @@ patch upstream code, not a preference.
 
 ## Branch model
 
-- `master` — pristine snapshot of the upstream commit we vendored. Never modified.
-- `ourapp/main` — our active branch. All patches live here.
+- `origin/dev` — fork's mirror of `anomalyco/opencode:dev`. Synced manually via `git fetch upstream`.
+- `ourapp/main` — our active branch, rebased on top of `origin/dev`. All patches live here.
 
-When we want to pull from upstream:
-1. `git checkout master && git pull upstream dev`
-2. `git checkout ourapp/main && git merge master`
-3. Resolve conflicts in the files listed below.
-4. Run `bun scripts/verify-bearer-patch.ts` to confirm the heuristic still passes.
+To pull upstream updates:
+
+```bash
+git fetch upstream dev
+git checkout ourapp/main
+git rebase upstream/dev
+# Resolve any conflicts in files listed below — they should be minimal.
+bun scripts/verify-bearer-patch.ts   # confirm Bearer heuristic still works
+bun --cwd packages/doc-tools test    # confirm doc-tools still works
+git push --force-with-lease origin ourapp/main
+```
+
+## Local dev setup (Windows nuance)
+
+The opencode upstream uses **symlinks** in a few `.d.ts` files (e.g.
+`packages/enterprise/src/custom-elements.d.ts` → `../../ui/src/custom-elements.d.ts`).
+Without these symlinks, `bun turbo typecheck` (run by the husky `pre-push` hook)
+fails with `TS1128: Declaration or statement expected.`
+
+**On Windows**, real symlinks require either:
+
+1. **Developer Mode ON** (recommended) — `Settings → System → For developers → Developer Mode`,
+   then re-clone the fork. This is a one-time setup. Git will then create proper symlinks.
+2. **Running git as admin** — possible but inconvenient.
+3. **`--no-verify` on push** — bypasses the hook (use only when the failures are
+   upstream-attributed Windows symlink stubs, not regressions in our code).
+
+On Mac/Linux this is not an issue.
+
+If you see typecheck errors **only in upstream files we haven't touched**
+(`packages/enterprise/...`, `packages/sdk/js/...`), it's almost certainly the
+Windows symlink issue. Errors in `packages/doc-tools/...` or our patched files
+in `packages/llm` / `packages/opencode` are real regressions — fix before push.
 
 ## Patches
 
@@ -74,9 +102,10 @@ with anything in upstream's empty `.opencode/opencode.jsonc`.
 
 ## Not patched (deliberately, things to add outside the fork)
 
-- **Document tools** (PDF/DOCX/XLSX parsers, DOCX generator) — live in `../doc-tools/`,
-  will be added as an opencode plugin when we move the package into `packages/doc-tools/`.
-  No upstream code needs to change.
+- **Document tools** (PDF/DOCX/XLSX parsers, DOCX generator) — now live in
+  `packages/doc-tools/` as a new workspace package, registered as an opencode plugin
+  via `opencode.jsonc` and `packages/opencode/package.json` (one workspace dep). No
+  changes to upstream `packages/llm` or `packages/opencode/src/`.
 - **Rebranding** (icons, app name, splash) — these are asset files and a few strings;
   not architectural patches. Done at packaging time via electron-builder config and
   i18n strings. Will be applied closer to public release.
