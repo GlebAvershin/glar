@@ -91,7 +91,26 @@ schema so it can be set without TS errors:
 
 **Change.** Added one optional field to the `Info.options` schema.
 
-### 3. `.opencode/opencode.jsonc` — local Gateway config scaffold
+### 3. `packages/desktop/electron.vite.config.ts` — bind Vite to 127.0.0.1
+
+**Why.** Default Vite dev server binds to `[::1]:5173` (IPv6 localhost). Electron's
+Chromium resolves `localhost` to `127.0.0.1` (IPv4) → `ERR_CONNECTION_REFUSED` when
+the renderer tries to load `http://localhost:5173/`. Visible as a desktop dialog
+"OpenCode failed to load" on first `bun dev:desktop`.
+
+**Change.** Added `server: { host: "127.0.0.1" }` to the renderer config.
+
+```ts
+renderer: {
+  server: { host: "127.0.0.1" },
+  // ...
+}
+```
+
+No effect on Mac/Linux (both IPv4 and IPv6 localhost resolve to the same socket
+there). Required on Windows.
+
+### 4. `.opencode/opencode.jsonc` — local Gateway config scaffold
 
 **Why.** Default config for the desktop dev session — points Anthropic provider at
 the local LiteLLM Gateway and uses the patched Bearer auth. Drop your Billing-issued

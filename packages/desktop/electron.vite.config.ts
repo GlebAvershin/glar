@@ -83,6 +83,13 @@ export default defineConfig({
     plugins: [appPlugin, sentry],
     publicDir: "../../../app/public",
     root: "src/renderer",
+    // Bind dev server to IPv4 explicitly. On Windows, default Vite binding
+    // resolves to [::1] (IPv6) while Electron/Chromium resolves "localhost"
+    // to 127.0.0.1 (IPv4) → ERR_CONNECTION_REFUSED on first load.
+    // No effect on Mac/Linux (where both resolutions point to the same socket).
+    server: {
+      host: "127.0.0.1",
+    },
     build: {
       sourcemap: true,
       rollupOptions: {
