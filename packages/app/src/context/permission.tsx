@@ -21,6 +21,30 @@ type PermissionRespondFn = (input: {
   directory?: string
 }) => void
 
+/**
+ * OurApp: типы разрешений, относящиеся к dev-инструментам opencode
+ * (терминал, правка/запись файлов, патчи, git). Юристам/бухгалтерам они не нужны
+ * и пугают техническим popup'ом — вне dev-режима их запросы авто-отклоняются.
+ *
+ * НЕ входят сюда: read (безопасное чтение), parse_document / generate_docx
+ * (наши doc-tools), webfetch/websearch (полезны для проверки контрагента).
+ */
+const DEV_TOOL_PERMISSIONS = new Set([
+  "bash",
+  "edit",
+  "write",
+  "patch",
+  "apply_patch",
+  "git",
+])
+
+function isDevToolPermission(perm: PermissionRequest): boolean {
+  const id = (perm.permission ?? "").toLowerCase()
+  if (DEV_TOOL_PERMISSIONS.has(id)) return true
+  // permission может приходить с префиксом вроде "tool.bash" / "edit.file"
+  return [...DEV_TOOL_PERMISSIONS].some((t) => id === t || id.startsWith(`${t}.`) || id.startsWith(`tool.${t}`))
+}
+
 function isNonAllowRule(rule: unknown) {
   if (!rule) return false
   if (typeof rule === "string") return rule !== "allow"
@@ -164,6 +188,21 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       if (event?.type !== "permission.asked") return
 
       const perm = event.properties
+
+      // OurApp: dev-инструменты (bash/git/edit/write/patch) бесполезны юристам/
+      // бухгалтерам и пугают их техническим popup'ом. Вне dev-режима — сразу
+      // отказываем, не показывая диалог. doc-tools (parse_document/generate_docx)
+      // и обычные read — не трогаем.
+      if (import.meta.env.VITE_OURAPP_SHOW_DEV !== "true" && isDevToolPermission(perm)) {
+        respond({
+          sessionID: perm.sessionID,
+          permissionID: perm.id,
+          response: "reject",
+          directory: e.name,
+        })
+        return
+      }
+
       if (!shouldAutoRespond(perm, e.name)) return
 
       respondOnce(perm, e.name)

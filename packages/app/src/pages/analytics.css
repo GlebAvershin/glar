@@ -1,0 +1,216 @@
+/* Analytics page (ТЗ-05 §6) — стиль DESIGN.md (cream paper, serif headings). */
+
+.ourapp-analytics {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--ourapp-bg-page, #fbf9f4);
+  color: var(--text-primary, #1a1614);
+}
+
+.ourapp-analytics__topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--hairline, #e8e3db);
+  background: var(--ourapp-bg-surface-alt, #f6f2eb);
+  flex-shrink: 0;
+}
+
+.ourapp-analytics__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px 64px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ourapp-analytics__title {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.ourapp-analytics__lede {
+  font-size: 15px;
+  color: var(--text-secondary, #5c5852);
+  margin: 0 0 24px;
+  max-width: 640px;
+}
+
+.ourapp-analytics__filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.ourapp-analytics__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ourapp-analytics__card {
+  padding: 18px 20px;
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: var(--ourapp-bg-surface, #fff);
+}
+
+.ourapp-analytics__cardLabel {
+  font-family: var(--font-family-mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #8b8680);
+  margin-bottom: 8px;
+}
+
+.ourapp-analytics__cardValue {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #1a1614);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-analytics__section {
+  margin-bottom: 32px;
+}
+
+.ourapp-analytics__sectionTitle {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+}
+
+.ourapp-analytics__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-analytics__table th,
+.ourapp-analytics__table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline, #e8e3db);
+}
+
+.ourapp-analytics__table th {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--text-tertiary, #8b8680);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ourapp-analytics__num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-analytics__loading,
+.ourapp-analytics__empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary, #5c5852);
+  font-size: 14px;
+  background: var(--ourapp-bg-surface, #fff);
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-md, 10px);
+}
+
+/* === Bar chart === */
+
+.ourapp-chart {
+  position: relative;
+  background: var(--ourapp-bg-surface, #fff);
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-md, 10px);
+  padding: 16px;
+}
+
+.ourapp-chart__svg {
+  width: 100%;
+  display: block;
+}
+
+.ourapp-chart__bar rect {
+  fill: var(--ourapp-accent, #0b5345);
+  opacity: 0.7;
+  transition: opacity 50ms linear;
+}
+
+.ourapp-chart__bar--hover rect {
+  opacity: 1;
+}
+
+.ourapp-chart__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-tertiary, #8b8680);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-chart__tooltip {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--text-primary, #1a1614);
+  color: var(--ourapp-bg-surface, #fff);
+  border-radius: var(--ourapp-radius-sm, 6px);
+  font-size: 11px;
+}
+
+.ourapp-chart__tooltipDate {
+  opacity: 0.7;
+}
+
+.ourapp-chart__tooltipValue {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-chart__total {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline, #e8e3db);
+  font-size: 12px;
+  color: var(--text-secondary, #5c5852);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-chart-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-tertiary, #8b8680);
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .ourapp-analytics__cards {
+    grid-template-columns: 1fr;
+  }
+  .ourapp-analytics__main {
+    padding: 24px 20px 64px;
+  }
+}

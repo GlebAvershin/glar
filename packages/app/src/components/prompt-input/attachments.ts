@@ -7,6 +7,7 @@ import { uuid } from "@/utils/uuid"
 import { getCursorPosition } from "./editor-dom"
 import { attachmentMime } from "./files"
 import { normalizePaste, pasteMode } from "./paste"
+import { parseOfficeDocumentLocally } from "@/ourapp/doc-parse"
 
 function dataUrl(file: File, mime: string) {
   return new Promise<string>((resolve) => {
@@ -55,16 +56,58 @@ export function createPromptAttachments(input: PromptAttachmentsInput) {
     const editor = input.editor()
     if (!editor) return false
 
+    // OurApp: Office-документы (DOCX/XLSX/CSV) и PDF парсим локально и кладём как
+    // image-attachment-part с extractedText. Composer покажет это как карточку
+    // (с иконкой документа), текст останется скрытым.
+    // При build-request эта part заменяется на text-part с содержимым документа —
+    // LLM видит plain text (даже GigaChat без document-API).
+    if (mime === "ourapp/office" || mime === "application/pdf") {
+      const parsed = await parseOfficeDocumentLocally(file)
+      if (!parsed) {
+        if (toast) warn()
+        return false
+      }
+      const docAttachment: ImageAttachmentPart = {
+        type: "image",
+        id: uuid(),
+        filename: parsed.filename,
+        mime: "ourapp/office",
+        dataUrl: "",
+        extractedText: parsed.text,
+      }
+      const cursor = prompt.cursor() ?? getCursorPosition(editor)
+      prompt.set([...prompt.current(), docAttachment], cursor)
+      return true
+    }
+
     const url = await dataUrl(file, mime)
     if (!url) return false
 
-    const attachment: ImageAttachmentPart = {
+    // OurApp: для картинок — СИНХРОННЫЙ локальный OCR (ТЗ-04 §OCR), чтобы к
+    // моменту отправки скан уже был распознан (иначе race: юзер шлёт картинку
+    // до завершения фонового OCR). Скан паспорта/документа распознаём на машине
+    // юзера → в облачную модель уходит ТЕКСТ (замаскированный), не картинка с ПДн.
+    let attachment: ImageAttachmentPart = {
       type: "image",
       id: uuid(),
       filename: file.name,
       mime,
       dataUrl: url,
     }
+    if (mime.startsWith("image/")) {
+      try {
+        const { ocrImageToText, looksLikeDocumentScan } = await import("@/ourapp/pii/ocr")
+        const result = await ocrImageToText(file)
+        if (looksLikeDocumentScan(result)) {
+          // Документ-скан → отправляем как текст (mime scanned-doc + extractedText).
+          attachment = { ...attachment, mime: "ourapp/scanned-doc", extractedText: result.text }
+        }
+      } catch (err) {
+        console.warn("[ocr] scan recognition failed", err)
+        // best-effort: при ошибке оставляем картинку как есть.
+      }
+    }
+
     const cursor = prompt.cursor() ?? getCursorPosition(editor)
     prompt.set([...prompt.current(), attachment], cursor)
     return true

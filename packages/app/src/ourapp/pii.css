@@ -1,0 +1,190 @@
+/* OurApp — стили для PII UI (ТЗ-04 §7). */
+
+/* === Бейдж в composer === */
+
+.ourapp-pii-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--ourapp-radius-full, 9999px);
+  border: 1px solid var(--ourapp-accent, #0b5345);
+  background: var(--accent-muted, rgba(11, 83, 69, 0.08));
+  color: var(--ourapp-accent, #0b5345);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 50ms linear;
+}
+
+.ourapp-pii-badge:hover {
+  background: rgba(11, 83, 69, 0.14);
+}
+
+.ourapp-pii-badge--off {
+  border-color: var(--hairline-strong, #d8d2c5);
+  background: transparent;
+  color: var(--text-tertiary, #8b8680);
+}
+
+.ourapp-pii-badge--ru {
+  border-color: var(--ourapp-highlight, #c8a85c);
+  background: var(--ourapp-highlight-muted, rgba(200, 168, 92, 0.1));
+  color: #8a7332;
+}
+
+.ourapp-pii-badge--soft {
+  border-color: var(--info, #475569);
+  color: var(--info, #475569);
+  background: rgba(71, 85, 105, 0.08);
+}
+
+.ourapp-pii-badge__text {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* === Тумблер в настройках === */
+
+.ourapp-toggle {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.ourapp-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ourapp-toggle__track {
+  width: 36px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--hairline-strong, #d8d2c5);
+  position: relative;
+  transition: background 150ms ease;
+}
+
+.ourapp-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--ourapp-bg-surface, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: transform 150ms cubic-bezier(0.32, 0.72, 0.36, 1);
+}
+
+.ourapp-toggle input:checked + .ourapp-toggle__track {
+  background: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-toggle input:checked + .ourapp-toggle__track .ourapp-toggle__thumb {
+  transform: translateX(14px);
+}
+
+/* === Чекбокс === */
+
+.ourapp-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary, #5c5852);
+}
+
+.ourapp-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ourapp-accent, #0b5345);
+}
+
+/* === Группы pill в режиме disabled === */
+
+.ourapp-settings__pills--disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* === Превью маскирования (модалка) === */
+
+.ourapp-pii-preview {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--ourapp-bg-surface, #fff);
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-lg, 14px);
+  padding: 28px 28px 20px;
+  box-shadow: 0 24px 64px rgba(26, 22, 20, 0.18);
+}
+
+.ourapp-pii-preview__title {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary, #1a1614);
+  margin: 0 0 8px;
+}
+
+.ourapp-pii-preview__lede {
+  font-size: 14px;
+  color: var(--text-secondary, #5c5852);
+  margin: 0 0 16px;
+}
+
+.ourapp-pii-preview__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hairline, #e8e3db);
+}
+
+.ourapp-pii-preview__stat {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--accent-muted, rgba(11, 83, 69, 0.08));
+  color: var(--ourapp-accent, #0b5345);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-pii-preview__sample {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary, #1a1614);
+  background: var(--bg-inset, #f1ede3);
+  padding: 12px 14px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 16px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.ourapp-pii-preview__mask {
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background: rgba(11, 83, 69, 0.18);
+  color: var(--ourapp-accent, #0b5345);
+  font-family: var(--font-family-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ourapp-pii-preview__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

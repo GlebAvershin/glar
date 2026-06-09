@@ -30,3 +30,7 @@ UPCOMING_CHANGELOG.md
 logs/
 *.bun-build
 tsconfig.tsbuildinfo
+
+# OurApp: stray uncompressed Tesseract data at package root (offline OCR uses public/tessdata/*.gz)
+packages/app/eng.traineddata
+packages/app/rus.traineddata

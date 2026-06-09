@@ -35,6 +35,7 @@
     "@types/luxon": "catalog:",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
+    "sharp": "0.34.5",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-icons-spritesheet": "3.0.1",
@@ -64,10 +65,12 @@
     "@tanstack/solid-query": "5.91.4",
     "@thisbeyond/solid-dnd": "0.7.5",
     "diff": "catalog:",
+    "docx": "^9.0.0",
     "effect": "catalog:",
     "fuzzysort": "catalog:",
     "ghostty-web": "github:anomalyco/ghostty-web#main",
     "luxon": "catalog:",
+    "mammoth": "^1.8.0",
     "marked": "catalog:",
     "marked-shiki": "catalog:",
     "remeda": "catalog:",
@@ -75,6 +78,9 @@
     "solid-js": "catalog:",
     "solid-list": "catalog:",
     "tailwindcss": "catalog:",
-    "virtua": "catalog:"
+    "tesseract.js": "7.0.0",
+    "unpdf": "^0.12.0",
+    "virtua": "catalog:",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

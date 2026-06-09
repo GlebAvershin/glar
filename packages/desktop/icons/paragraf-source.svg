@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Иконка приложения «Параграф». Знак § (символ параграфа) — ключевой
+  узнаваемый элемент названия. Emerald-squircle фон + кремовый символ.
+  Источник для генерации .ico/.icns/png (scripts/generate-icons.ts).
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0C5C4B"/>
+      <stop offset="1" stop-color="#0B5345"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle-фон (скруглённый квадрат, как у современных ОС) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#bg)"/>
+
+  <!-- Тонкая внутренняя рамка для глубины -->
+  <rect x="40" y="40" width="944" height="944" rx="190" ry="190"
+        fill="none" stroke="#FBF9F4" stroke-opacity="0.10" stroke-width="2"/>
+
+  <!-- Символ параграфа § кремовым серифом по центру -->
+  <text x="512" y="512" text-anchor="middle" dominant-baseline="central"
+        font-family="Georgia, 'IBM Plex Serif', 'Times New Roman', serif"
+        font-size="660" font-weight="500" fill="#FBF9F4">§</text>
+</svg>

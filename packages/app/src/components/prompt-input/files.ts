@@ -20,6 +20,22 @@ const TEXT_MIMES = new Set([
   "application/yaml",
 ])
 
+// OurApp: Office-документы — парсятся локально через @ourapp/doc-tools перед отправкой,
+// поэтому валидатор пропускает их как text/plain (на момент upload в composer).
+const OFFICE_MIMES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/msword",
+  "application/vnd.ms-excel",
+])
+const OFFICE_EXTS = new Set(["docx", "xlsx", "doc", "xls", "csv"])
+
+export function isOfficeDoc(file: File): boolean {
+  const type = kind(file.type)
+  if (OFFICE_MIMES.has(type)) return true
+  return OFFICE_EXTS.has(ext(file.name))
+}
+
 const SAMPLE = 4096
 
 function kind(type: string) {
@@ -58,6 +74,10 @@ export async function attachmentMime(file: File) {
   const suffix = ext(file.name)
   const fallback = IMAGE_EXTS.get(suffix) ?? (suffix === "pdf" ? "application/pdf" : undefined)
   if ((!type || type === "application/octet-stream") && fallback) return fallback
+
+  // OurApp: DOCX/XLSX — пропускаем валидацию, дальше распарсим локально.
+  // Возвращаем синтетический MIME "ourapp/office" — обработчик в add() поймёт.
+  if (isOfficeDoc(file)) return "ourapp/office"
 
   if (textMime(type)) return "text/plain"
   const bytes = new Uint8Array(await file.slice(0, SAMPLE).arrayBuffer())

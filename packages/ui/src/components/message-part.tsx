@@ -446,6 +446,21 @@ export function getToolInfo(
         title: input.name || i18n.t("ui.tool.skill"),
       }
     default:
+      // OurApp: document tools get proper icons/titles
+      if (tool === "generate_docx") {
+        return {
+          icon: "folder",
+          title: "Генерация документа",
+          subtitle: input.title || input.output_path?.split(/[/\\]/).pop(),
+        }
+      }
+      if (tool === "parse_document") {
+        return {
+          icon: "glasses",
+          title: "Чтение документа",
+          subtitle: input.path?.split(/[/\\]/).pop(),
+        }
+      }
       return {
         icon: "mcp",
         title: tool,
@@ -832,6 +847,68 @@ export function registerPartComponent(type: string, component: PartComponent) {
   PART_MAPPING[type] = component
 }
 
+/**
+ * OurApp: action-кнопки под assistant-сообщением — "Скачать .docx".
+ * Работает для любой модели (включая GigaChat без tool-calls):
+ * собираем markdown из всех text-parts → конвертируем в DOCX через docx-pkg
+ * → триггерим скачивание + открываем preview-панель.
+ */
+function OurAppAssistantActions(props: { parts: PartType[] }) {
+  const [state, setState] = createStore({ busy: false, error: null as string | null })
+  const markdown = createMemo(() => {
+    const texts = (props.parts ?? [])
+      .filter((p): p is TextPart => p.type === "text" && !(p as TextPart).synthetic)
+      .map((p) => p.text || "")
+      .filter((t) => t.trim().length > 0)
+    return texts.join("\n\n")
+  })
+  const hasContent = createMemo(() => markdown().trim().length > 60)
+
+  const handleDownload = async () => {
+    if (state.busy) return
+    setState({ busy: true, error: null })
+    try {
+      // Функция регистрируется из @ourapp/app (см. doc-export.ts) на старте.
+      // ui-пакет не может импортировать из app-пакета напрямую (циклика),
+      // поэтому используем глобальный реестр через window.
+      const reg = (window as { ourappDocExport?: (md: string, opts: { showPreview?: boolean }) => Promise<boolean> })
+        .ourappDocExport
+      if (!reg) {
+        setState("error", "Экспорт DOCX недоступен (не зарегистрирован)")
+        return
+      }
+      const ok = await reg(markdown(), { showPreview: true })
+      if (!ok) setState("error", "Не удалось создать DOCX")
+    } catch (err) {
+      setState("error", err instanceof Error ? err.message : String(err))
+    } finally {
+      setState("busy", false)
+    }
+  }
+
+  return (
+    <Show when={hasContent()}>
+      <div
+        data-component="ourapp-assistant-actions"
+        class="flex items-center gap-2 px-3 pt-2 pb-1 text-12-regular"
+      >
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={state.busy}
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border-weaker-base bg-surface-base hover:border-border-base hover:bg-surface-raised-base text-text-base transition-colors disabled:opacity-50 disabled:cursor-wait"
+        >
+          <Icon name="download" size="small" />
+          <span>{state.busy ? "Создаём…" : "Скачать .docx"}</span>
+        </button>
+        <Show when={state.error}>
+          <span class="text-text-critical-base text-11-regular">{state.error}</span>
+        </Show>
+      </div>
+    </Show>
+  )
+}
+
 export function Message(props: MessageProps) {
   return (
     <Switch>
@@ -877,56 +954,61 @@ export function AssistantMessageDisplay(props: {
   )
 
   return (
-    <Index each={grouped()}>
-      {(entryAccessor) => {
-        const entryType = createMemo(() => entryAccessor().type)
+    <>
+      <Index each={grouped()}>
+        {(entryAccessor) => {
+          const entryType = createMemo(() => entryAccessor().type)
 
-        return (
-          <Switch>
-            <Match when={entryType() === "context"}>
-              {(() => {
-                const parts = createMemo(
-                  () => {
+          return (
+            <Switch>
+              <Match when={entryType() === "context"}>
+                {(() => {
+                  const parts = createMemo(
+                    () => {
+                      const entry = entryAccessor()
+                      if (entry.type !== "context") return emptyTools
+                      return entry.refs
+                        .map((ref) => part().get(ref.partID))
+                        .filter((part): part is ToolPart => !!part && isContextGroupTool(part))
+                    },
+                    emptyTools,
+                    { equals: same },
+                  )
+
+                  return (
+                    <Show when={parts().length > 0}>
+                      <ContextToolGroup parts={parts()} />
+                    </Show>
+                  )
+                })()}
+              </Match>
+              <Match when={entryType() === "part"}>
+                {(() => {
+                  const item = createMemo(() => {
                     const entry = entryAccessor()
-                    if (entry.type !== "context") return emptyTools
-                    return entry.refs
-                      .map((ref) => part().get(ref.partID))
-                      .filter((part): part is ToolPart => !!part && isContextGroupTool(part))
-                  },
-                  emptyTools,
-                  { equals: same },
-                )
+                    if (entry.type !== "part") return
+                    return part().get(entry.ref.partID)
+                  })
 
-                return (
-                  <Show when={parts().length > 0}>
-                    <ContextToolGroup parts={parts()} />
-                  </Show>
-                )
-              })()}
-            </Match>
-            <Match when={entryType() === "part"}>
-              {(() => {
-                const item = createMemo(() => {
-                  const entry = entryAccessor()
-                  if (entry.type !== "part") return
-                  return part().get(entry.ref.partID)
-                })
-
-                return (
-                  <Show when={item()}>
-                    <Part
-                      part={item()!}
-                      message={props.message}
-                      showAssistantCopyPartID={props.showAssistantCopyPartID}
-                    />
-                  </Show>
-                )
-              })()}
-            </Match>
-          </Switch>
-        )
-      }}
-    </Index>
+                  return (
+                    <Show when={item()}>
+                      <Part
+                        part={item()!}
+                        message={props.message}
+                        showAssistantCopyPartID={props.showAssistantCopyPartID}
+                      />
+                    </Show>
+                  )
+                })()}
+              </Match>
+            </Switch>
+          )
+        }}
+      </Index>
+      {/* OurApp: action-кнопки под assistant-сообщением. Позволяет скачать
+          ответ как DOCX/открыть в preview-панели — независимо от модели. */}
+      <OurAppAssistantActions parts={props.parts} />
+    </>
   )
 }
 
@@ -1049,7 +1131,32 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
     () => props.parts?.find((p) => p.type === "text" && !(p as TextPart).synthetic) as TextPart | undefined,
   )
 
-  const text = createMemo(() => textPart()?.text || "")
+  const rawText = createMemo(() => textPart()?.text || "")
+
+  // OurApp: text может содержать inline-блоки документов из локального парсера:
+  //   [Документ: имя.docx]\n\n<содержимое>\n\n[Конец документа]\n
+  // Извлекаем их в отдельный список и убираем из видимого text.
+  const docBlocks = createMemo(() => {
+    const txt = rawText()
+    if (!txt.includes("[Документ:")) return []
+    const re = /\[Документ:\s*([^\]]+)\]\n\n[\s\S]*?\n\n\[Конец документа\]\n?/g
+    const out: string[] = []
+    let match: RegExpExecArray | null
+    while ((match = re.exec(txt)) !== null) {
+      out.push(match[1].trim())
+    }
+    return out
+  })
+
+  const text = createMemo(() => {
+    const txt = rawText()
+    if (!txt.includes("[Документ:")) return txt
+    return txt
+      .replace(/\[Документ:[^\]]+\]\n\n[\s\S]*?\n\n\[Конец документа\]\n?/g, "")
+      .replace(/^\s*\n+/, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  })
 
   const files = createMemo(() => (props.parts?.filter((p) => p.type === "file") as FilePart[]) ?? [])
 
@@ -1142,6 +1249,22 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
                 </div>
               )
             }}
+          </For>
+        </div>
+      </Show>
+      {/* OurApp: chips для прикреплённых документов (DOCX/XLSX/CSV) —
+          извлечены из text через маркеры [Документ: ...] */}
+      <Show when={docBlocks().length > 0}>
+        <div data-slot="user-message-attachments">
+          <For each={docBlocks()}>
+            {(filename) => (
+              <div data-slot="user-message-attachment" data-type="file" title={filename}>
+                <div data-slot="user-message-attachment-file">
+                  <FileIcon node={{ path: filename, type: "file" }} />
+                  <span data-slot="user-message-attachment-name">{filename}</span>
+                </div>
+              </div>
+            )}
           </For>
         </div>
       </Show>
@@ -1498,7 +1621,16 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
   const streaming = createMemo(
     () => props.message.role === "assistant" && typeof (props.message as AssistantMessage).time.completed !== "number",
   )
-  const text = () => readPartText(data.store.part_text_accum_delta, part())
+  // OurApp: автоматическое демаскирование ПДн при рендере. Если ourapp/pii
+  // зарегистрировал window.ourappUnmask и для сессии есть vault — заменяем
+  // плейсхолдеры (__PII_FIO_1__) обратно на реальные значения. UI-пакет не
+  // должен импортировать из @/ourapp напрямую, поэтому используем глобал-хук.
+  const text = () => {
+    const raw = readPartText(data.store.part_text_accum_delta, part())
+    if (!raw) return raw
+    const fn = (typeof window !== "undefined" ? window : undefined)?.ourappUnmask
+    return typeof fn === "function" ? fn(raw, props.message.sessionID) : raw
+  }
   const isLastTextPart = createMemo(() => {
     const last = (data.store.part?.[props.message.id] ?? [])
       .filter((item): item is TextPart => item?.type === "text" && !!item.text?.trim())
@@ -1564,7 +1696,14 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   const streaming = createMemo(
     () => props.message.role === "assistant" && typeof (props.message as AssistantMessage).time.completed !== "number",
   )
-  const text = () => readPartText(data.store.part_text_accum_delta, part())
+  // OurApp: демаскирование reasoning-вывода — модель может цитировать ПДн
+  // в своих рассуждениях.
+  const text = () => {
+    const raw = readPartText(data.store.part_text_accum_delta, part())
+    if (!raw) return raw
+    const fn = (typeof window !== "undefined" ? window : undefined)?.ourappUnmask
+    return typeof fn === "function" ? fn(raw, props.message.sessionID) : raw
+  }
 
   return (
     <Show when={text()}>

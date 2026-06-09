@@ -3,6 +3,15 @@ export const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "im
 export const ACCEPTED_FILE_TYPES = [
   ...ACCEPTED_IMAGE_TYPES,
   "application/pdf",
+  // OurApp: Office docs — парсятся через @ourapp/doc-tools (mammoth для DOCX, SheetJS для XLSX)
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+  "application/msword", // .doc (legacy) — fallback
+  "application/vnd.ms-excel", // .xls (legacy) — fallback
+  ".docx",
+  ".xlsx",
+  ".doc",
+  ".xls",
   "text/*",
   "application/json",
   "application/ld+json",
@@ -61,6 +70,10 @@ const MIME_EXT = new Map([
   ["image/gif", "gif"],
   ["image/webp", "webp"],
   ["application/pdf", "pdf"],
+  ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"],
+  ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"],
+  ["application/msword", "doc"],
+  ["application/vnd.ms-excel", "xls"],
   ["application/json", "json"],
   ["application/ld+json", "jsonld"],
   ["application/toml", "toml"],

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://opencode.ai/desktop-theme.json",
+  "name": "Параграф",
+  "id": "ourapp",
+  "light": {
+    "palette": {
+      "neutral": "#FBF9F4",
+      "ink": "#1A1614",
+      "primary": "#0B5345",
+      "accent": "#C8A85C",
+      "success": "#0B5345",
+      "warning": "#B45309",
+      "error": "#991B1B",
+      "info": "#475569",
+      "diffAdd": "#0B5345",
+      "diffDelete": "#991B1B"
+    },
+    "overrides": {
+      "background-base": "#FBF9F4",
+      "surface-base": "#FFFFFF",
+      "syntax-comment": "#8B8680",
+      "syntax-keyword": "#0B5345",
+      "syntax-string": "#B45309",
+      "syntax-primitive": "#475569",
+      "syntax-property": "#7B1A2E",
+      "syntax-constant": "#0B5345"
+    }
+  },
+  "dark": {
+    "palette": {
+      "neutral": "#15120F",
+      "ink": "#EDE8DF",
+      "primary": "#1A8A6B",
+      "accent": "#D4B872",
+      "success": "#1A8A6B",
+      "warning": "#D97706",
+      "error": "#DC2626",
+      "info": "#94A3B8",
+      "diffAdd": "#1A8A6B",
+      "diffDelete": "#DC2626"
+    },
+    "overrides": {
+      "background-base": "#15120F",
+      "surface-base": "#1F1B17",
+      "syntax-comment": "#847E72",
+      "syntax-keyword": "#1A8A6B",
+      "syntax-string": "#D97706",
+      "syntax-primitive": "#94A3B8",
+      "syntax-property": "#D4B872",
+      "syntax-constant": "#1A8A6B"
+    }
+  }
+}

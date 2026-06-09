@@ -1227,11 +1227,10 @@ export default function Layout(props: ParentProps) {
   }
 
   function openSettings() {
-    const run = ++dialogRun
-    void import("@/components/dialog-settings").then((x) => {
-      if (dialogDead || dialogRun !== run) return
-      dialog.show(() => <x.DialogSettings />)
-    })
+    // OurApp: открываем НАШУ страницу настроек (/settings), а не opencode-диалог.
+    // Так команда settings.open (гамбургер-меню, Ctrl+,, палитра команд) ведёт туда
+    // же, куда и «Настройки» в шапке — без дублей и путаницы.
+    navigate("/settings")
   }
 
   function projectRoot(directory: string) {
@@ -2356,7 +2355,7 @@ export default function Layout(props: ParentProps) {
       settingsKeybind={() => command.keybind("settings.open")}
       onOpenSettings={openSettings}
       helpLabel={() => language.t("sidebar.help")}
-      onOpenHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+      onOpenHelp={() => navigate("/help")}
       renderPanel={() =>
         mobile ? <SidebarPanel project={currentProject} mobile /> : <SidebarPanel project={currentProject} merged />
       }
@@ -2378,7 +2377,7 @@ export default function Layout(props: ParentProps) {
             {props.children}
           </Show>
         </main>
-        {import.meta.env.DEV && <DebugBar />}
+        {import.meta.env.DEV && import.meta.env.VITE_OURAPP_SHOW_DEV === "true" && <DebugBar />}
         <Toast.Region />
       </div>
     )
@@ -2532,7 +2531,7 @@ export default function Layout(props: ParentProps) {
             </div>
           </div>
         </div>
-        {import.meta.env.DEV && <DebugBar />}
+        {import.meta.env.DEV && import.meta.env.VITE_OURAPP_SHOW_DEV === "true" && <DebugBar />}
       </div>
       <Toast.Region />
     </div>

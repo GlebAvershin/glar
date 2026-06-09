@@ -47,6 +47,9 @@ export function SessionSidePanel(props: {
   reviewSnap: boolean
   size: Sizing
 }) {
+  // OurApp: правая панель (file-tabs/review/context) — IDE-фича.
+  // Юристам/бухгалтерам не нужна. Включаем только под VITE_OURAPP_SHOW_DEV=true.
+  if (import.meta.env.VITE_OURAPP_SHOW_DEV !== "true") return null
   const layout = useLayout()
   const platform = usePlatform()
   const settings = useSettings()

@@ -1,13 +1,32 @@
-import { Show, type JSX } from "solid-js"
+import { Show } from "solid-js"
 import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
-import { Icon } from "@opencode-ai/ui/icon"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { IconButtonV2 } from "@opencode-ai/ui/v2/components/icon-button-v2.jsx"
 import { Icon as IconV2 } from "@opencode-ai/ui/v2/components/icon.jsx"
 
 import { useCommand } from "@/context/command"
-import { DESKTOP_MENU, desktopMenuVisible, type DesktopMenuAction, type DesktopMenuEntry } from "@/desktop-menu"
+import { type DesktopMenuAction, type DesktopMenuEntry } from "@/desktop-menu"
 import { usePlatform } from "@/context/platform"
+
+// OurApp: плоское упрощённое меню «Параграф» (вместо вложенных File/Edit/View/…
+// от opencode). Только то, что реально нужно нашей аудитории. «Настройки» ведёт
+// на нашу страницу /settings (см. settings.open в layout.tsx). Стандартные действия
+// (копировать/вставить, свернуть/закрыть) убраны — они есть в горячих клавишах и
+// кнопках окна.
+const HAMBURGER_ITEMS: DesktopMenuEntry[] = [
+  { type: "item", label: "Новая задача", command: "session.new" },
+  { type: "item", label: "Настройки", command: "settings.open", accelerator: { windows: "Ctrl+," } },
+  { type: "separator" },
+  { type: "item", label: "Увеличить", action: "view.zoomIn", accelerator: { windows: "Ctrl++" } },
+  { type: "item", label: "Уменьшить", action: "view.zoomOut", accelerator: { windows: "Ctrl+-" } },
+  { type: "item", label: "Масштаб 100%", action: "view.resetZoom", accelerator: { windows: "Ctrl+0" } },
+  { type: "separator" },
+  { type: "item", label: "Полноэкранный режим", action: "view.toggleFullscreen" },
+  { type: "item", label: "Перезагрузить", action: "view.reload" },
+  { type: "separator" },
+  { type: "item", label: "Экспорт логов…", command: "logs.export" },
+  { type: "item", label: "Написать в поддержку", href: "mailto:support@paragraf.app" },
+]
 
 export function WindowsAppMenu(props: {
   command: ReturnType<typeof useCommand>
@@ -58,7 +77,7 @@ export function WindowsAppMenu(props: {
             variant="ghost-muted"
             size="large"
             icon={<IconV2 name="menu" />}
-            aria-label="OpenCode menu"
+            aria-label="Меню Параграф"
             onPointerDown={rememberFocus}
             onKeyDown={rememberFocus}
           />
@@ -69,7 +88,7 @@ export function WindowsAppMenu(props: {
           icon="menu"
           variant="ghost"
           class="titlebar-icon rounded-md shrink-0"
-          aria-label="OpenCode menu"
+          aria-label="Меню Параграф"
           onPointerDown={rememberFocus}
           onKeyDown={rememberFocus}
         />
@@ -77,45 +96,23 @@ export function WindowsAppMenu(props: {
       <DropdownMenu.Portal>
         <DropdownMenu.Content class="desktop-app-menu">
           <DropdownMenu.Group>
-            <DropdownMenu.GroupLabel class="desktop-app-menu-heading">OpenCode</DropdownMenu.GroupLabel>
-            {DESKTOP_MENU.filter((menu) => desktopMenuVisible(menu, "windows")).map((menu) => (
-              <DesktopMenuSubmenu label={menu.label}>
-                {menu.items
-                  ?.filter((entry) => desktopMenuVisible(entry, "windows"))
-                  .map((entry) =>
-                    entry.type === "separator" ? (
-                      <DropdownMenu.Separator />
-                    ) : (
-                      <DesktopMenuItem
-                        label={entry.label ?? ""}
-                        keybind={entry.command ? props.command.keybind(entry.command) : entry.accelerator?.windows}
-                        disabled={entry.command ? commandDisabled(entry.command) : false}
-                        onSelect={() => runEntry(entry)}
-                      />
-                    ),
-                  )}
-              </DesktopMenuSubmenu>
-            ))}
+            <DropdownMenu.GroupLabel class="desktop-app-menu-heading">Параграф</DropdownMenu.GroupLabel>
+            {HAMBURGER_ITEMS.map((entry) =>
+              entry.type === "separator" ? (
+                <DropdownMenu.Separator />
+              ) : (
+                <DesktopMenuItem
+                  label={entry.label ?? ""}
+                  keybind={entry.command ? props.command.keybind(entry.command) : entry.accelerator?.windows}
+                  disabled={entry.command ? commandDisabled(entry.command) : false}
+                  onSelect={() => runEntry(entry)}
+                />
+              ),
+            )}
           </DropdownMenu.Group>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu>
-  )
-}
-
-function DesktopMenuSubmenu(props: { label: string; children: JSX.Element }) {
-  return (
-    <DropdownMenu.Sub>
-      <DropdownMenu.SubTrigger>
-        <span data-slot="dropdown-menu-item-label">{props.label}</span>
-        <span data-slot="desktop-app-menu-chevron">
-          <Icon name="chevron-right" size="small" />
-        </span>
-      </DropdownMenu.SubTrigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.SubContent class="desktop-app-menu">{props.children}</DropdownMenu.SubContent>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Sub>
   )
 }
 

@@ -8,6 +8,13 @@ import { Persist, persisted } from "@/utils/persist"
 
 export type ModelKey = { providerID: string; modelID: string }
 
+// OurApp: провайдеры, чьи модели НЕ показываем в нашем продукте. opencode Zen
+// (DeepSeek/MiMo/Nemotron и т.п.) — бесплатные облачные модели самого opencode:
+// они обходят наш биллинг (кредиты не списываются) и 152-ФЗ (данные уходят не в
+// РФ, без нашего маскирования), и не входят в наш пул. Скрываем целиком —
+// и из списка (available ниже), и из выбора по умолчанию (validModel в local.tsx).
+export const HIDDEN_MODEL_PROVIDERS = new Set(["opencode", "opencode-go"])
+
 type Visibility = "show" | "hide"
 type User = ModelKey & { visibility: Visibility; favorite?: boolean }
 type Store = {
@@ -37,12 +44,15 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
     )
 
     const available = createMemo(() =>
-      providers.connected().flatMap((p) =>
-        Object.values(p.models).map((m) => ({
-          ...m,
-          provider: p,
-        })),
-      ),
+      providers
+        .connected()
+        .filter((p) => !HIDDEN_MODEL_PROVIDERS.has(p.id))
+        .flatMap((p) =>
+          Object.values(p.models).map((m) => ({
+            ...m,
+            provider: p,
+          })),
+        ),
     )
 
     const release = createMemo(

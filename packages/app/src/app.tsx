@@ -1,4 +1,9 @@
 import "@/index.css"
+import "@/ourapp/register-doc-tools"
+// Регистрирует window.ourappDocExport для кнопки "Скачать .docx" в UI-пакете
+import "@/ourapp/doc-export"
+// Регистрирует window.ourappUnmask для демаскирования ПДн при рендере (ТЗ-04)
+import "@/ourapp/pii/global"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@opencode-ai/ui/context"
 import { DialogProvider } from "@opencode-ai/ui/context/dialog"
@@ -10,6 +15,12 @@ import { Splash } from "@opencode-ai/ui/logo"
 import { ThemeProvider } from "@opencode-ai/ui/theme/context"
 import { MetaProvider } from "@solidjs/meta"
 import { type BaseRouterProps, Navigate, Route, Router } from "@solidjs/router"
+import CreditsRoute from "@/ourapp/credits-route"
+import SettingsRoute from "@/ourapp/settings-route"
+import HistoryRoute from "@/ourapp/history-route"
+import AnalyticsRoute from "@/ourapp/analytics-route"
+import HelpRoute from "@/ourapp/help-route"
+import { OnboardingGate } from "@/ourapp/onboarding-gate"
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query"
 import { Effect } from "effect"
 import {
@@ -49,6 +60,7 @@ import { useCheckServerHealth } from "./utils/server-health"
 
 const HomeRoute = lazy(() => import("@/pages/home"))
 const Session = lazy(() => import("@/pages/session"))
+// CreditsRoute — eager-import чтобы не было ~3-сек задержки на первом клике в dev.
 
 const SessionRoute = Object.assign(
   () => (
@@ -306,16 +318,28 @@ export function AppInterface(props: {
           <QueryProvider>
             <GlobalSDKProvider>
               <GlobalSyncProvider>
-                <Dynamic
-                  component={props.router ?? Router}
-                  root={(routerProps) => <RouterRoot appChildren={props.children}>{routerProps.children}</RouterRoot>}
-                >
-                  <Route path="/" component={HomeRoute} />
-                  <Route path="/:dir" component={DirectoryLayout}>
-                    <Route path="/" component={() => <Navigate href="session" />} />
-                    <Route path="/session/:id?" component={SessionRoute} />
-                  </Route>
-                </Dynamic>
+                <OnboardingGate>
+                  <Dynamic
+                    component={props.router ?? Router}
+                    root={(routerProps) => <RouterRoot appChildren={props.children}>{routerProps.children}</RouterRoot>}
+                  >
+                    <Route path="/" component={HomeRoute} />
+                    <Route path="/credits" component={CreditsRoute} />
+                    <Route path="/settings" component={SettingsRoute} />
+                    <Route path="/history" component={HistoryRoute} />
+                    <Route path="/analytics" component={AnalyticsRoute} />
+                    <Route path="/help" component={HelpRoute} />
+                    <Route path="/:dir" component={DirectoryLayout}>
+                      <Route path="/" component={() => <Navigate href="session" />} />
+                      <Route path="/session/:id?" component={SessionRoute} />
+                      <Route path="/credits" component={CreditsRoute} />
+                      <Route path="/settings" component={SettingsRoute} />
+                      <Route path="/history" component={HistoryRoute} />
+                      <Route path="/analytics" component={AnalyticsRoute} />
+                      <Route path="/help" component={HelpRoute} />
+                    </Route>
+                  </Dynamic>
+                </OnboardingGate>
               </GlobalSyncProvider>
             </GlobalSDKProvider>
           </QueryProvider>

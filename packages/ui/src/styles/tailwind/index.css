@@ -37,6 +37,8 @@
 
   --font-sans: var(--font-family-sans);
   --font-sans--font-feature-settings: var(--font-family-sans--font-feature-settings);
+  --font-serif: var(--font-family-serif);
+  --font-serif--font-feature-settings: var(--font-family-serif--font-feature-settings);
   --font-mono: var(--font-family-mono);
   --font-mono--font-feature-settings: var(--font-family-mono--font-feature-settings);
 

@@ -1,6 +1,9 @@
 import type { Session } from "@opencode-ai/sdk/v2/client"
-import { createMemo, For, Match, Show, Switch } from "solid-js"
+import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
+import { type Vertical } from "@/ourapp/scenario-library"
+import { HomeWelcome, type HomeRecentSession } from "@/ourapp/home-welcome"
+import { openScenarioWizard } from "@/ourapp/scenarios/wizard-controller"
 import { useQuery } from "@tanstack/solid-query"
 import { Button } from "@opencode-ai/ui/button"
 import { Logo } from "@opencode-ai/ui/logo"
@@ -63,6 +66,17 @@ function HomeDesign() {
   const server = useServer()
   const language = useLanguage()
   const [state, setState] = createStore({ search: "", project: undefined as string | undefined })
+
+  // OurApp: вертикаль (юрист/бухгалтер) для двухдверного welcome.
+  // Хранится в localStorage, синхронизируется с ScenarioLibrary.
+  const initialVertical: Vertical = (() => {
+    try {
+      const stored = localStorage.getItem("ourapp.primaryVertical")
+      if (stored === "lawyer" || stored === "accountant") return stored
+    } catch {}
+    return "lawyer"
+  })()
+  const [vertical, setVertical] = createSignal<Vertical>(initialVertical)
 
   const projects = createMemo(() => layout.projects.list())
   const selectedProject = createMemo(
@@ -167,63 +181,78 @@ function HomeDesign() {
   }
 
   function openSettings() {
-    void import("@/components/dialog-settings").then((x) => {
-      dialog.show(() => <x.DialogSettings />)
+    // OurApp: вместо opencode-овского dialog — наша страница /settings.
+    navigate("/settings")
+  }
+
+  // OurApp: главная страница — наш welcome с библиотекой сценариев.
+  // Левый sidebar (Sessions/TARGETWORK/Настройки/Помощь) сохраняем — он уже наш.
+  // Правый main заменяем на ScenarioLibrary (как в design/preview.html mockup 02).
+  // Клик по сценарию → открывается новая сессия + диспатчится scenario-pick.
+  const onScenarioPick = (scenario: { id?: string; prompt: string; recommendedModel?: string }) => {
+    const project = selectedProject()
+    if (!project) {
+      void chooseProject()
+      return
+    }
+    layout.projects.open(project.worktree)
+    server.projects.touch(project.worktree)
+    // Сначала открываем новую сессию (composer смонтируется), потом — мастер
+    // сценария (если есть конфиг с шагами) либо пред-заполнение prompt.
+    navigate(`/${base64Encode(project.worktree)}/session`)
+    requestAnimationFrame(() => {
+      if (scenario.id && openScenarioWizard(scenario.id)) return
+      window.dispatchEvent(
+        new CustomEvent("ourapp:scenario-pick", {
+          detail: { prompt: scenario.prompt, recommendedModel: scenario.recommendedModel },
+        }),
+      )
     })
   }
 
-  return (
-    <div class="mx-auto grid w-full h-full max-w-[1080px] gap-8 px-6 pb-16 lg:grid-cols-[280px_minmax(0,720px)]">
-      <HomeProjectColumn
-        projects={projects()}
-        selected={selectedProject()?.worktree}
-        selectProject={selectProject}
-        chooseProject={() => void chooseProject()}
-        openSettings={openSettings}
-        openHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
-        language={language}
-      />
+  const onVerticalChange = (v: Vertical) => {
+    setVertical(v)
+    try {
+      localStorage.setItem("ourapp.primaryVertical", v)
+    } catch {}
+  }
 
-      <section
-        class="min-w-0 flex-1 flex flex-col overflow-y-hidden pt-12"
-        aria-label={language.t("sidebar.project.recentSessions")}
-      >
-        <HomeSessionSearch
-          value={state.search}
-          placeholder={language.t("home.sessions.search.placeholder")}
-          onInput={(value) => setState("search", value)}
-        />
-        <div class="mt-3 overflow-auto flex-1">
-          <div class="pt-3 flex flex-col gap-6">
-            <Show when={!sessionLoad.isLoading} fallback={<HomeSessionSkeleton label={language.t("common.loading")} />}>
-              <Show
-                when={groups().length > 0}
-                fallback={
-                  <div class="flex min-w-0 flex-col gap-4">
-                    <HomeSessionGroupHeader title={language.t("home.sessions.empty")} onNewSession={openNewSession} />
-                  </div>
-                }
-              >
-                <For each={groups()}>
-                  {(group, index) => (
-                    <div class="flex min-w-0 flex-col gap-4">
-                      <HomeSessionGroupHeader
-                        title={group.title}
-                        onNewSession={index() === 0 ? openNewSession : undefined}
-                      />
-                      <div class="flex min-w-0 flex-col gap-px">
-                        <For each={group.sessions}>
-                          {(record) => <HomeSessionRow record={record} openSession={openSession} />}
-                        </For>
-                      </div>
-                    </div>
-                  )}
-                </For>
-              </Show>
-            </Show>
-          </div>
-        </div>
-      </section>
+  // Преобразуем opencode-сессии в формат для HomeWelcome.
+  const recentForHome = (): HomeRecentSession[] =>
+    records().map((record) => {
+      const ts = record.session.time.updated ?? record.session.time.created
+      const dt = DateTime.fromMillis(ts).toRelative({ locale: "ru" }) ?? ""
+      // sessionTitle принимает строку, не объект — нормализует "New session - ISO" в "New session".
+      const rawTitle = (record.session as { title?: string }).title
+      const normalized = sessionTitle(rawTitle) || rawTitle || "Без названия"
+      return {
+        id: record.session.id,
+        title: normalized,
+        relativeAt: dt,
+        // OurApp: НЕ показываем имя рабочей папки (projectName) — для юриста/бухгалтера
+        // концепции «папки проекта» нет, это пережиток opencode (показывал TARGETWORK).
+        directory: record.session.directory,
+      }
+    })
+
+  return (
+    <div class="h-full w-full">
+      <HomeWelcome
+        vertical={vertical()}
+        recent={recentForHome()}
+        onOpenSession={(session) => {
+          const rec = records().find((r) => r.session.id === session.id)
+          if (rec) openSession(rec.session)
+        }}
+        onPickScenario={onScenarioPick}
+        onStartNew={openNewSession}
+        onOpenCredits={() => navigate("/credits")}
+        onOpenSettings={openSettings}
+        onOpenHistory={() => navigate("/history")}
+        onOpenAnalytics={() => navigate("/analytics")}
+        onOpenHelp={() => navigate("/help")}
+        onVerticalChange={onVerticalChange}
+      />
     </div>
   )
 }

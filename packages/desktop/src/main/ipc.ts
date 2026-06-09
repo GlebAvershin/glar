@@ -214,6 +214,29 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("run-desktop-menu-action", (event: IpcMainInvokeEvent, action: DesktopMenuAction) => {
     runDesktopMenuAction(BrowserWindow.fromWebContents(event.sender), action)
   })
+
+  // OurApp: рендер HTML → PDF через offscreen Chromium (кириллица корректна).
+  // Используется для экспорта сессии в PDF (ТЗ-05). Возвращает ArrayBuffer.
+  ipcMain.handle("ourapp-print-pdf", async (_event: IpcMainInvokeEvent, html: string) => {
+    const win = new BrowserWindow({
+      show: false,
+      webPreferences: { offscreen: true, javascript: false },
+    })
+    try {
+      await win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html))
+      // Дать шрифтам/раскладке примениться.
+      await new Promise((r) => setTimeout(r, 200))
+      const pdf = await win.webContents.printToPDF({
+        printBackground: true,
+        pageSize: "A4",
+        margins: { top: 0.6, bottom: 0.6, left: 0.6, right: 0.6 },
+      })
+      // Возвращаем ArrayBuffer (IPC сериализует Uint8Array корректно).
+      return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength)
+    } finally {
+      win.destroy()
+    }
+  })
 }
 
 export function sendSqliteMigrationProgress(win: BrowserWindow, progress: SqliteMigrationProgress) {

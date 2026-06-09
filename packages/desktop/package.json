@@ -11,6 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsgo -b",
+    "icons:generate": "bun ./scripts/generate-icons.ts",
     "predev": "bun ./scripts/predev.ts",
     "dev": "electron-vite dev",
     "prebuild": "bun ./scripts/prebuild.ts",
@@ -52,6 +53,8 @@
     "electron": "41.2.1",
     "electron-builder": "^26",
     "electron-vite": "^5",
+    "png2icons": "2.0.1",
+    "sharp": "0.34.5",
     "solid-js": "catalog:",
     "sury": "11.0.0-alpha.4",
     "typescript": "~5.6.2",

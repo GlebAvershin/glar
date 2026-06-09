@@ -163,7 +163,9 @@ const localeMatchers: Array<{ locale: Locale; match: (language: string) => boole
 ]
 
 function detectLocale(): Locale {
-  if (typeof navigator !== "object") return "en"
+  // OurApp: дефолт — русский (аудитория РФ/СНГ). Если ОС на другом языке и он
+  // поддерживается — используем его, иначе всё равно русский.
+  if (typeof navigator !== "object") return "ru"
 
   const languages = navigator.languages?.length ? navigator.languages : [navigator.language]
   for (const language of languages) {
@@ -173,11 +175,11 @@ function detectLocale(): Locale {
     if (match) return match.locale
   }
 
-  return "en"
+  return "ru"
 }
 
 export function normalizeLocale(value: string): Locale {
-  return LOCALES.includes(value as Locale) ? (value as Locale) : "en"
+  return LOCALES.includes(value as Locale) ? (value as Locale) : "ru"
 }
 
 function readStoredLocale() {

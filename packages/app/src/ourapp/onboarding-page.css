@@ -1,0 +1,287 @@
+/* OurApp онбординг — стили двухдверного входа. */
+
+.ourapp-onboarding {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family-sans);
+  color: light-dark(#5C5852, #B5AFA4);
+  background:
+    radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px) 0 0 / 4px 4px,
+    light-dark(#FBF9F4, #15120F);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.ourapp-onboarding__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid light-dark(#E8E3DB, #2E2924);
+  flex-shrink: 0;
+}
+
+.ourapp-onboarding__brand {
+  font-family: var(--font-family-serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+  letter-spacing: -0.01em;
+}
+
+.ourapp-onboarding__brand::first-letter {
+  color: light-dark(#0B5345, #1A8A6B);
+}
+
+.ourapp-onboarding__back {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: light-dark(#5C5852, #B5AFA4);
+  padding: 6px 12px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  cursor: pointer;
+  transition: all 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-onboarding__back:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-onboarding__main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 32px 80px;
+}
+
+.ourapp-onboarding__step {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ourapp-onboarding__eyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 8px;
+  font-family: var(--font-family-sans);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: light-dark(#0B5345, #1A8A6B);
+  padding: 6px 14px;
+  background: light-dark(rgba(11, 83, 69, 0.07), rgba(26, 138, 107, 0.15));
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.ourapp-onboarding__title {
+  font-family: var(--font-family-serif);
+  font-size: 48px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  color: light-dark(#1A1614, #EDE8DF);
+  margin: 0 0 4px;
+}
+
+.ourapp-onboarding__title em {
+  font-style: italic;
+  color: light-dark(#0B5345, #1A8A6B);
+}
+
+@media (max-width: 640px) {
+  .ourapp-onboarding__title {
+    font-size: 36px;
+  }
+}
+
+.ourapp-onboarding__lede {
+  font-size: 16px;
+  line-height: 1.55;
+  color: light-dark(#5C5852, #B5AFA4);
+  margin: 0 0 24px;
+  max-width: 520px;
+}
+
+.ourapp-onboarding__lede strong {
+  color: light-dark(#1A1614, #EDE8DF);
+  font-weight: 500;
+}
+
+.ourapp-onboarding__lede code {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  padding: 1px 6px;
+  background: light-dark(#F1EDE3, #2B251F);
+  border-radius: 4px;
+}
+
+/* ---- Doors (Step 1) ---- */
+
+.ourapp-onboarding__doors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .ourapp-onboarding__doors {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ourapp-onboarding__door {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 26px;
+  background: light-dark(#FFFFFF, #1F1B17);
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+  border-radius: var(--ourapp-radius-lg, 14px);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px light-dark(rgba(26, 22, 20, 0.04), rgba(0, 0, 0, 0.4));
+  transition: all 180ms var(--ourapp-ease, ease);
+}
+
+.ourapp-onboarding__door:hover {
+  border-color: light-dark(#0B5345, #1A8A6B);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 20px light-dark(rgba(11, 83, 69, 0.12), rgba(0, 0, 0, 0.5));
+}
+
+.ourapp-onboarding__doorTitle {
+  font-family: var(--font-family-serif);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-onboarding__doorLede {
+  font-size: 13px;
+  line-height: 1.5;
+  color: light-dark(#5C5852, #B5AFA4);
+}
+
+/* ---- Field (Step 2 + 3) ---- */
+
+.ourapp-onboarding__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ourapp-onboarding__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: light-dark(#5C5852, #B5AFA4);
+}
+
+.ourapp-onboarding__input {
+  background: light-dark(#FFFFFF, #1F1B17);
+  border: 1px solid light-dark(#D8D2C5, #3A342D);
+  border-radius: var(--ourapp-radius-sm, 6px);
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  color: light-dark(#1A1614, #EDE8DF);
+  transition: border-color 150ms var(--ourapp-ease, ease), box-shadow 150ms var(--ourapp-ease, ease);
+  outline: none;
+}
+
+.ourapp-onboarding__input--mono {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+}
+
+.ourapp-onboarding__input:focus {
+  border-color: light-dark(#0B5345, #1A8A6B);
+  box-shadow: 0 0 0 3px light-dark(rgba(11, 83, 69, 0.1), rgba(26, 138, 107, 0.15));
+}
+
+.ourapp-onboarding__error {
+  font-size: 13px;
+  color: light-dark(#991B1B, #DC2626);
+  padding: 8px 12px;
+  background: light-dark(rgba(153, 27, 27, 0.06), rgba(220, 38, 38, 0.12));
+  border-radius: var(--ourapp-radius-sm, 6px);
+  border: 1px solid light-dark(rgba(153, 27, 27, 0.2), rgba(220, 38, 38, 0.3));
+}
+
+.ourapp-onboarding__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ourapp-onboarding__foot {
+  font-size: 12px;
+  color: light-dark(#8B8680, #847E72);
+  margin-top: 24px;
+  line-height: 1.55;
+}
+
+.ourapp-onboarding__link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: light-dark(#0B5345, #1A8A6B);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ourapp-onboarding__link:hover {
+  color: light-dark(#0D6B58, #1FA17F);
+}
+
+/* ---- Dev token entry (Step 3) ---- */
+
+.ourapp-onboarding__devbox {
+  margin-top: 24px;
+  padding: 20px 22px;
+  background: light-dark(#F6F2EB, #25201B);
+  border: 1px dashed light-dark(#D8D2C5, #3A342D);
+  border-radius: var(--ourapp-radius-md, 10px);
+}
+
+.ourapp-onboarding__devlabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: light-dark(#B45309, #D97706);
+  margin-bottom: 8px;
+}
+
+.ourapp-onboarding__devlede {
+  font-size: 13px;
+  line-height: 1.5;
+  color: light-dark(#5C5852, #B5AFA4);
+  margin: 0 0 12px;
+}
+
+.ourapp-onboarding__devlede code {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  background: light-dark(#FFFFFF, #1F1B17);
+  border-radius: 4px;
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+}

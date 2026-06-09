@@ -144,6 +144,52 @@ renderer: {
 No effect on Mac/Linux (both IPv4 and IPv6 localhost resolve to the same socket
 there). Required on Windows.
 
+### 6. Дизайн-система — переписан `themes/oc-2.json` + шрифты `@fontsource`
+
+**Why.** Чёрная/dev-эстетика opencode не подходит нашей аудитории (юристы 40+).
+Меняем дефолтную тему `oc-2` на нашу палитру «Restrained Editorial» (deep emerald
+accent, cream paper background, IBM Plex Serif для акцентов). Источник правды —
+`D:/TEMKA/DESIGN.md`.
+
+**Изменения:**
+
+- `packages/ui/src/theme/themes/oc-2.json` — палитра + overrides переписаны полностью
+  под нашу систему. ID `oc-2` сохранён (preload-скрипт и loader используют его как
+  special default — заменять ID повсюду слишком инвазивно).
+- `packages/ui/src/theme/themes/ourapp.json` — explicit альтернатива (тот же контент,
+  для совместимости с будущим добавлением extra-вариаций).
+- `packages/ui/src/theme/context.tsx` — display-name `OC-2` → `Параграф`.
+- `packages/ui/src/theme/default-themes.ts` + `index.ts` — экспорт `ourappTheme`.
+- `packages/ui/src/theme/loader.ts` — special-case `themeId === "ourapp"` тоже
+  считается дефолтом (рендерится в `:root`, без `[data-theme=...]`).
+- `packages/ui/src/styles/theme.css` — `--font-family-sans` теперь Onest Variable,
+  добавлен `--font-family-serif: IBM Plex Serif`. `--font-family-mono` теперь
+  JetBrains Mono.
+- `packages/ui/src/styles/tailwind/index.css` — экспорт `--font-serif` для Tailwind.
+- `packages/ui/src/styles/ourapp-tokens.css` — **новый** файл. Содержит наши доп.
+  токены (highlight gold, motion durations, paper-grain background-image, утилитарный
+  класс `.ourapp-serif`).
+- `packages/ui/src/styles/index.css` — импорт шрифтов через `@fontsource/*` (offline-
+  совместимо с Electron) + импорт `ourapp-tokens.css` в layer(theme).
+- `packages/ui/package.json` — новые deps: `@fontsource-variable/onest`,
+  `@fontsource-variable/jetbrains-mono`, `@fontsource/ibm-plex-serif`.
+
+**Что это даёт.** Все компоненты opencode (`button.css`, `card.css`, `text-field.css`
+и т.д.) автоматически подхватывают новые цвета через resolved theme + новые шрифты
+через `var(--font-family-*)`. Никаких правок в `packages/ui/src/components/`.
+
+**Что нужно сделать пользователю после pull:**
+
+```bash
+bun install                   # установит @fontsource deps
+bun --cwd packages/desktop dev  # увидеть результат
+```
+
+**Конфликты при upstream-merge.** `themes/oc-2.json` будет конфликтовать на каждом
+ребейзе — это ожидаемо, его всегда оставляем НАШИМ (наша палитра). `theme.css`,
+`tailwind/index.css`, `index.css`, `context.tsx`, `default-themes.ts`, `index.ts` —
+скорее всего конфликта не будет (правки точечные).
+
 ### 5. `.opencode/opencode.jsonc` — local Gateway config scaffold
 
 **Why.** Default config for the desktop dev session — points Anthropic provider at

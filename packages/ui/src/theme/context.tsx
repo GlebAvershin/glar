@@ -41,7 +41,8 @@ function knownThemes() {
 }
 
 const names: Record<string, string> = {
-  "oc-2": "OC-2",
+  "oc-2": "Параграф",
+  ourapp: "Параграф (alt)",
   amoled: "AMOLED",
   aura: "Aura",
   ayu: "Ayu",
@@ -150,7 +151,7 @@ function applyThemeCss(theme: DesktopTheme, themeId: string, mode: "light" | "da
 
   // Update theme-color meta tag to match light/dark mode
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute("content", isDark ? "#131010" : "#F8F7F7")
+  if (meta) meta.setAttribute("content", isDark ? "#15120F" : "#FBF9F4")
 }
 
 function cacheThemeVariants(theme: DesktopTheme, themeId: string) {

@@ -4,6 +4,8 @@ import type { ElectronAPI, InitStep, SqliteMigrationProgress } from "./types"
 const api: ElectronAPI = {
   killSidecar: () => ipcRenderer.invoke("kill-sidecar"),
   installCli: () => ipcRenderer.invoke("install-cli"),
+  // OurApp: HTML → PDF через offscreen Chromium (ТЗ-05 экспорт сессии).
+  printToPDF: (html: string) => ipcRenderer.invoke("ourapp-print-pdf", html),
   awaitInitialization: (onStep) => {
     const handler = (_: unknown, step: InitStep) => onStep(step)
     ipcRenderer.on("init-step", handler)

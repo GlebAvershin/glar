@@ -1,7 +1,20 @@
 @layer theme, base, components, utilities;
 
+/* OurApp fonts — bundled via @fontsource for offline Electron.
+ * Variable fonts (onest, jetbrains-mono): кириллица + латиница в одном index.css.
+ * Non-variable (ibm-plex-serif): subsets отдельно (cyrillic-{weight}.css). */
+@import "@fontsource-variable/onest";
+@import "@fontsource/ibm-plex-serif/latin-400.css";
+@import "@fontsource/ibm-plex-serif/latin-400-italic.css";
+@import "@fontsource/ibm-plex-serif/latin-500.css";
+@import "@fontsource/ibm-plex-serif/cyrillic-400.css";
+@import "@fontsource/ibm-plex-serif/cyrillic-400-italic.css";
+@import "@fontsource/ibm-plex-serif/cyrillic-500.css";
+@import "@fontsource-variable/jetbrains-mono";
+
 @import "./colors.css" layer(theme);
 @import "./theme.css" layer(theme);
+@import "./ourapp-tokens.css" layer(theme);
 
 @import "./base.css" layer(base);
 @import "katex/dist/katex.min.css" layer(base);

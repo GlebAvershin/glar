@@ -29,8 +29,8 @@ import { createAutoScroll } from "@opencode-ai/ui/hooks"
 import { previewSelectedLines } from "@opencode-ai/ui/pierre/selection-bridge"
 import { Button } from "@opencode-ai/ui/button"
 import { showToast } from "@opencode-ai/ui/toast"
-import { checksum } from "@opencode-ai/core/util/encode"
-import { useLocation, useSearchParams } from "@solidjs/router"
+import { base64Encode, checksum } from "@opencode-ai/core/util/encode"
+import { useLocation, useNavigate, useSearchParams } from "@solidjs/router"
 import { NewSessionDesignView, NewSessionView, SessionHeader } from "@/components/session"
 import { useComments } from "@/context/comments"
 import { getSessionPrefetch, SESSION_PREFETCH_TTL } from "@/context/global-sync/session-prefetch"
@@ -43,6 +43,7 @@ import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
 import { type FollowupDraft, sendFollowupDraft } from "@/components/prompt-input/submit"
+import { guardSendCredits, LowBalanceBanner, LowBalanceModal } from "@/ourapp/low-balance-guard"
 import { createSessionComposerState, SessionComposerRegion } from "@/pages/session/composer"
 import {
   createOpenReviewFile,
@@ -60,6 +61,13 @@ import { TerminalPanel } from "@/pages/session/terminal-panel"
 import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { shouldUseV2NewSessionPage } from "@/pages/session/new-session-layout"
+import { WelcomeSidebar, type WelcomeSidebarRecentSession } from "@/ourapp/welcome-sidebar"
+import { type Scenario, type Vertical } from "@/ourapp/scenario-library"
+import { sortedRootSessions } from "@/pages/layout/helpers"
+import { ArtifactPreviewPanel, useArtifactPanel } from "@/ourapp/artifact-preview"
+import { ScenarioWizardHost } from "@/ourapp/scenarios/scenario-wizard-host"
+import { openScenarioWizard } from "@/ourapp/scenarios/wizard-controller"
+import { sessionTitle } from "@/utils/session-title"
 import { Identifier } from "@/utils/id"
 import { diffs as list } from "@/utils/diffs"
 import { Persist, persisted } from "@/utils/persist"
@@ -197,7 +205,43 @@ export default function Page() {
   const terminal = useTerminal()
   const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const { params, sessionKey, tabs, view } = useSessionLayout()
+
+  // OurApp: реальные recent sessions для нашего WelcomeSidebar.
+  // Точно тот же путь что в home.tsx: layout.projects.list() + globalSync.child().
+  const sidebarRecentSessions = createMemo(() => {
+    const projects = layout.projects.list()
+    if (projects.length === 0) return [] as Array<WelcomeSidebarRecentSession & { directory: string }>
+    const now = Date.now()
+    const allSessions: ReturnType<typeof sortedRootSessions> = []
+    for (const project of projects) {
+      const directories = [project.worktree, ...(project.sandboxes ?? [])]
+      for (const dir of directories) {
+        const stores = globalSync.child(dir, { bootstrap: false })
+        const store = stores[0]
+        if (!store) continue
+        allSessions.push(...sortedRootSessions(store, now))
+      }
+    }
+    const seen = new Set<string>()
+    const unique = allSessions.filter((s) => {
+      if (seen.has(s.id)) return false
+      seen.add(s.id)
+      return true
+    })
+    unique.sort((a, b) => {
+      const at = a.time.updated ?? a.time.created
+      const bt = b.time.updated ?? b.time.created
+      return bt - at
+    })
+    return unique.slice(0, 8).map((session) => ({
+      id: session.id,
+      title: sessionTitle(session.title) || "Без названия",
+      subtitle: session.title,
+      directory: session.directory,
+    }))
+  })
 
   createEffect(() => {
     if (!prompt.ready()) return
@@ -300,8 +344,10 @@ export default function Page() {
   const info = createMemo(() => (params.id ? sync.session.get(params.id) : undefined))
   const isChildSession = createMemo(() => !!info()?.parentID)
   const diffs = createMemo(() => (params.id ? list(sync.data.session_diff[params.id]) : []))
-  const canReview = createMemo(() => !!sync.project)
-  const reviewTab = createMemo(() => isDesktop())
+  // OurApp: review-tab (Git overview) — IDE-фича, юристам/бухгалтерам не нужна.
+  // Включается флагом VITE_OURAPP_SHOW_DEV=true. canReview ставим false навсегда.
+  const canReview = createMemo(() => !!sync.project && import.meta.env.VITE_OURAPP_SHOW_DEV === "true")
+  const reviewTab = createMemo(() => isDesktop() && import.meta.env.VITE_OURAPP_SHOW_DEV === "true")
   const tabState = createSessionTabs({
     tabs,
     pathFromTab: file.pathFromTab,
@@ -1389,6 +1435,7 @@ export default function Page() {
         globalSync,
         draft: item,
         optimisticBusy: item.sessionDirectory === sdk.directory,
+        before: guardSendCredits,
       }).catch((err) => {
         setFollowup("failed", input.sessionID, input.id)
         fail(err)
@@ -1710,8 +1757,47 @@ export default function Page() {
   return (
     <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
       {sessionSync() ?? ""}
-      <SessionHeader />
+      {/* OurApp: SessionHeader (название сессии opencode-style + ⋯) скрыт — заголовок и так есть в табе. */}
+      <Show when={import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
+        <SessionHeader />
+      </Show>
       <div class="flex-1 min-h-0 flex flex-col md:flex-row">
+        {/* OurApp WelcomeSidebar — наш левый сайдбар для обоих режимов сессии. */}
+        <Show when={isDesktop()}>
+          <WelcomeSidebar
+            vertical={(() => {
+              try {
+                const v = localStorage.getItem("ourapp.primaryVertical")
+                return (v === "accountant" ? "accountant" : "lawyer") as Vertical
+              } catch {
+                return "lawyer"
+              }
+            })()}
+            onPickScenario={(s: Scenario) => {
+              // OurApp: открываем мастер сценария (multi-step wizard). Если у
+              // сценария нет конфига с шагами — фоллбек на старое пред-заполнение.
+              if (openScenarioWizard(s.id)) return
+              window.dispatchEvent(
+                new CustomEvent("ourapp:scenario-pick", {
+                  detail: { scenarioId: s.id, prompt: s.prompt, recommendedModel: s.recommendedModel },
+                }),
+              )
+            }}
+            recentSessions={sidebarRecentSessions()}
+            activeSessionId={params.id}
+            onOpenSession={(session) => {
+              const record = sidebarRecentSessions().find((r) => r.id === session.id)
+              const dir = record?.directory
+              if (!dir) return
+              navigate(`/${base64Encode(dir)}/session/${session.id}`)
+            }}
+            onOpenCredits={() => navigate("/credits")}
+            onOpenSettings={() => navigate("/settings")}
+            onOpenHistory={() => navigate("/history")}
+            onOpenAnalytics={() => navigate("/analytics")}
+            onOpenHelp={() => navigate("/help")}
+          />
+        </Show>
         <Show when={!isDesktop() && !!params.id}>
           <Tabs value={store.mobileTab} class="h-auto">
             <Tabs.List>
@@ -1739,12 +1825,16 @@ export default function Page() {
 
         <div
           classList={{
-            "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger flex-1 md:flex-none": true,
+            "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger": true,
+            // OurApp: full-width chat — занимает всё пространство справа от sidebar.
+            // `flex-1` на десктопе тоже (вместо md:flex-none) чтобы grow по всей оставшейся ширине.
+            "flex-1": true,
             "duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:transition-none":
               !size.active() && !ui.reviewSnap,
             "transition-[width]": !isV2NewSessionPage(),
           }}
           style={{
+            // sessionPanelWidth() = "100%" когда side-panel закрыт — это и есть full-width.
             width: sessionPanelWidth(),
           }}
         >
@@ -1839,9 +1929,18 @@ export default function Page() {
           reviewSnap={ui.reviewSnap}
           size={size}
         />
+
+        <ArtifactPreviewPanel />
       </div>
 
-      <TerminalPanel />
+      {/* OurApp: terminal-панель — IDE-фича, юристам/бухгалтерам не нужна.
+          Включается только под VITE_OURAPP_SHOW_DEV=true. */}
+      <Show when={import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
+        <TerminalPanel />
+      </Show>
+      <ScenarioWizardHost />
+      <LowBalanceBanner />
+      <LowBalanceModal />
     </div>
   )
 }

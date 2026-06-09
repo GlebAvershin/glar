@@ -1,0 +1,185 @@
+/* History page (ТЗ-05 §4) — стиль DESIGN.md. */
+
+.ourapp-history {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--ourapp-bg-page, #fbf9f4);
+  color: var(--text-primary, #1a1614);
+}
+
+.ourapp-history__topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--hairline, #e8e3db);
+  background: var(--ourapp-bg-surface-alt, #f6f2eb);
+  flex-shrink: 0;
+}
+
+.ourapp-history__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px 64px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ourapp-history__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.ourapp-history__title {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.ourapp-history__search {
+  width: 280px;
+  padding: 10px 14px;
+  border: 1px solid var(--hairline-strong, #d8d2c5);
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: var(--ourapp-bg-surface, #fff);
+  font-family: var(--font-family-sans, "Onest", sans-serif);
+  font-size: 14px;
+  color: var(--text-primary, #1a1614);
+}
+
+.ourapp-history__search:focus {
+  outline: none;
+  border-color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-history__empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary, #5c5852);
+  font-size: 14px;
+  background: var(--ourapp-bg-surface, #fff);
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-md, 10px);
+}
+
+.ourapp-history__bucket {
+  margin-bottom: 32px;
+}
+
+.ourapp-history__bucketTitle {
+  font-family: var(--font-family-mono, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #8b8680);
+  margin: 0 0 12px;
+}
+
+.ourapp-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ourapp-history__item {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: var(--ourapp-bg-surface, #fff);
+  transition: border-color var(--ourapp-duration-hover, 50ms) linear;
+}
+
+.ourapp-history__item:hover {
+  border-color: var(--hairline-strong, #d8d2c5);
+}
+
+.ourapp-history__cardBtn {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ourapp-history__cardTitle {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary, #1a1614);
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ourapp-history__cardPreview {
+  font-size: 13px;
+  color: var(--text-secondary, #5c5852);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ourapp-history__cardMeta {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b8680);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-history__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.ourapp-history__action {
+  padding: 4px 10px;
+  border: 1px solid var(--hairline-strong, #d8d2c5);
+  border-radius: var(--ourapp-radius-sm, 6px);
+  background: transparent;
+  color: var(--text-secondary, #5c5852);
+  font-family: var(--font-family-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all var(--ourapp-duration-hover, 50ms) linear;
+}
+
+.ourapp-history__action:hover {
+  border-color: var(--ourapp-accent, #0b5345);
+  color: var(--ourapp-accent, #0b5345);
+}
+
+@media (max-width: 720px) {
+  .ourapp-history__main {
+    padding: 24px 20px 64px;
+  }
+  .ourapp-history__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ourapp-history__search {
+    width: 100%;
+  }
+}

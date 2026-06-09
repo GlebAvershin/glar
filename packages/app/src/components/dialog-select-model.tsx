@@ -12,9 +12,13 @@ import { List } from "@opencode-ai/ui/list"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { ModelTooltip } from "./model-tooltip"
 import { useLanguage } from "@/context/language"
+import { AutoModelRow } from "@/ourapp/auto-model/auto-model-row"
+import { setAutoModelEnabled, autoModelEnabled } from "@/ourapp/auto-model/store"
 
-const isFree = (provider: string, cost: { input: number } | undefined) =>
-  provider === "opencode" && (!cost || cost.input === 0)
+// OurApp: в нашем сервисе нет «бесплатных» моделей — любой вызов тарифицируется
+// кредитами. Пометка «Бесплатно» приходит от opencode Zen и для нас вводит в
+// заблуждение, поэтому всегда скрываем (см. также dialog-select-model-unpaid.tsx).
+const isFree = (_provider: string, _cost: { input: number } | undefined) => false
 
 type ModelState = ReturnType<typeof useLocal>["model"]
 
@@ -36,13 +40,15 @@ const ModelList: Component<{
   )
 
   return (
-    <List
+    <>
+      <AutoModelRow onSelect={props.onSelect} />
+      <List
       class={`flex-1 min-h-0 [&_[data-slot=list-scroll]]:flex-1 [&_[data-slot=list-scroll]]:min-h-0 ${props.class ?? ""}`}
       search={{ placeholder: language.t("dialog.model.search.placeholder"), autofocus: true, action: props.action }}
       emptyMessage={language.t("dialog.model.empty")}
       key={(x) => `${x.provider.id}:${x.id}`}
       items={models}
-      current={model.current()}
+      current={autoModelEnabled() ? undefined : model.current()}
       filterKeys={["provider.name", "name", "id"]}
       sortBy={(a, b) => a.name.localeCompare(b.name)}
       groupBy={(x) => x.provider.name}
@@ -64,6 +70,8 @@ const ModelList: Component<{
         </Tooltip>
       )}
       onSelect={(x) => {
+        // Выбор реальной модели выключает авто-режим.
+        setAutoModelEnabled(false)
         model.set(x ? { modelID: x.id, providerID: x.provider.id } : undefined, {
           recent: true,
         })
@@ -81,7 +89,8 @@ const ModelList: Component<{
           </Show>
         </div>
       )}
-    </List>
+      </List>
+    </>
   )
 }
 

@@ -1,0 +1,232 @@
+/* OurApp welcome-sidebar — стили для левой колонки welcome-экрана.
+ *
+ * Mockup 01 в design/preview.html:
+ *   - 264px ширина (наш стандарт, не Notion-широкий, не КонсультантПлюс-узкий)
+ *   - bg-surface-alt + 1px right hairline
+ *   - Серифный «Параграф» сверху, роль (caps) подзаголовок
+ *   - Active item = accent-muted + accent-ink цвет
+ *   - Footer = карточка кредитов с прогресс-баром
+ */
+
+.ourapp-sidebar {
+  width: 264px;
+  flex-shrink: 0;
+  border-right: 1px solid light-dark(#E8E3DB, #2E2924);
+  background: light-dark(#F6F2EB, #1F1B17);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-family-sans);
+  color: light-dark(#5C5852, #B5AFA4);
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .ourapp-sidebar {
+    display: none;
+  }
+}
+
+.ourapp-sidebar__header {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-weak-base);
+}
+
+.ourapp-sidebar__brand {
+  font-family: var(--font-family-serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-strong);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.ourapp-sidebar__brand::first-letter {
+  color: var(--text-interactive-base, var(--text-strong));
+}
+
+.ourapp-sidebar__role {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-weak);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.ourapp-sidebar__section {
+  padding: 14px 10px 6px;
+}
+
+.ourapp-sidebar__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-weak);
+  padding: 0 8px 8px;
+  font-weight: 600;
+}
+
+.ourapp-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text-base);
+  cursor: pointer;
+  transition: background 120ms var(--ourapp-ease, ease), color 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-sidebar__item:hover {
+  background: var(--surface-base-hover, transparent);
+  color: var(--text-strong);
+}
+
+.ourapp-sidebar__item--active,
+.ourapp-sidebar__item--active:hover {
+  background: var(--surface-interactive-weak, var(--surface-base-hover));
+  color: var(--text-interactive-base, var(--text-strong));
+}
+
+.ourapp-sidebar__item--passive {
+  cursor: default;
+  color: var(--text-weak);
+}
+
+.ourapp-sidebar__item--passive:hover {
+  background: transparent;
+  color: var(--text-base);
+}
+
+.ourapp-sidebar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.ourapp-sidebar__item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ourapp-sidebar__footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--border-weak-base);
+}
+
+.ourapp-usage {
+  background: var(--surface-raised-base, var(--surface-base));
+  border: 1px solid var(--border-weak-base);
+  border-radius: var(--ourapp-radius-md, 10px);
+  padding: 12px 14px;
+}
+
+.ourapp-usage--button {
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms var(--ourapp-ease, ease), background 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-usage--button:hover:not(:disabled) {
+  border-color: light-dark(#D8D2C5, #3A342D);
+}
+
+.ourapp-usage--button:disabled {
+  cursor: default;
+}
+
+.ourapp-usage__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  color: var(--text-weak);
+  margin-bottom: 8px;
+}
+
+.ourapp-usage__numbers {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-base);
+}
+
+.ourapp-usage__numbers strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.ourapp-usage__pending {
+  color: var(--text-weak);
+}
+
+.ourapp-usage__bar {
+  height: 4px;
+  background: var(--surface-base-hover, var(--surface-base));
+  border-radius: var(--ourapp-radius-full, 9999px);
+  overflow: hidden;
+}
+
+.ourapp-usage__fill {
+  height: 100%;
+  background: var(--text-interactive-base, var(--text-strong));
+  border-radius: inherit;
+  transition: width 240ms var(--ourapp-ease, ease);
+}
+
+.ourapp-usage__meta {
+  font-size: 10px;
+  color: var(--text-weak);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+}
+
+/* ---- Nav (Настройки / Помощь) в footer sidebar-а ---- */
+
+.ourapp-sidebar__nav {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ourapp-sidebar__navitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: light-dark(#5C5852, #B5AFA4);
+  cursor: pointer;
+  transition: background 120ms var(--ourapp-ease, ease), color 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-sidebar__navitem:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-sidebar__navicon {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.7;
+}

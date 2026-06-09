@@ -33,6 +33,7 @@ import type {
   AssistantMessage,
   Message as MessageType,
   Part as PartType,
+  TextPart,
   ToolPart,
   UserMessage,
 } from "@opencode-ai/sdk/v2"
@@ -44,6 +45,7 @@ import { normalize } from "@opencode-ai/ui/session-diff"
 import { useFileComponent } from "@opencode-ai/ui/context/file"
 import { shouldMarkBoundaryGesture, normalizeWheelDelta } from "@/pages/session/message-gesture"
 import { SessionContextUsage } from "@/components/session-context-usage"
+import { isDocxSession } from "@/ourapp/scenarios/docx-result-tracker"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { useLanguage } from "@/context/language"
@@ -1028,6 +1030,95 @@ export function MessageTimeline(props: {
     )
   }
 
+  function OurAppDocxButton(props: { userMessageID: string }) {
+    const [busy, setBusy] = createSignal(false)
+    const [error, setError] = createSignal<string | null>(null)
+
+    const markdown = createMemo(() => {
+      const assistantMsgs = assistantMessagesByParent().get(props.userMessageID) ?? emptyAssistantMessages
+      const texts: string[] = []
+      for (const msg of assistantMsgs) {
+        const parts = getMsgParts(msg.id)
+        for (const p of parts) {
+          if (p.type === "text" && !(p as TextPart).synthetic) {
+            const t = (p as TextPart).text || ""
+            if (t.trim().length > 0) texts.push(t)
+          }
+        }
+      }
+      return texts.join("\n\n")
+    })
+
+    /**
+     * Эвристика: показывать кнопки только когда ответ похож на документ.
+     * Жёсткие триггеры (любой из них):
+     *   - Markdown-заголовок (#, ##, ###) — модель явно структурирует документ
+     *   - Pipe-таблица (|...|) — табличные данные, прайс-лист, сравнение
+     *   - Текст длинный (>2500 символов) — лонгрид/реферат/договор
+     * Только нумерованный список без заголовков — НЕ триггер (это просто
+     * рекомендации/советы, не документ).
+     */
+    const looksLikeDocument = createMemo(() => {
+      const md = markdown().trim()
+      if (md.length < 300) return false
+      if (/^#{1,6}\s+/m.test(md)) return true
+      if (/^\s*\|.+\|\s*$/m.test(md)) return true
+      if (md.length > 2500) return true
+      return false
+    })
+
+    // Кнопки показываем если: (а) ответ похож на документ по форме, ИЛИ
+    // (б) сессия запущена из сценария с resultAction=generate_docx — там
+    // .docx нужен детерминированно, даже если текст короткий.
+    const hasContent = createMemo(() => {
+      if (markdown().trim().length < 60) return false
+      return looksLikeDocument() || isDocxSession(sessionID() ?? "")
+    })
+
+    const callExport = async (mode: "download" | "preview") => {
+      if (busy()) return
+      setBusy(true)
+      setError(null)
+      try {
+        const reg = (window as { ourappDocExport?: (md: string, opts: { showPreview?: boolean; skipDownload?: boolean }) => Promise<boolean> })
+          .ourappDocExport
+        if (!reg) {
+          setError("Экспорт DOCX недоступен")
+          return
+        }
+        const ok = await reg(markdown(), {
+          showPreview: true,
+          skipDownload: mode === "preview",
+        })
+        if (!ok) setError("Не удалось создать DOCX")
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+      } finally {
+        setBusy(false)
+      }
+    }
+
+    const btnClass = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] border-[var(--color-hairline-strong,#D8D2C5)] bg-[var(--color-bg-surface,#fff)] hover:bg-[var(--color-bg-surface-alt,#F6F2EB)] text-[var(--color-text-secondary,#5C5852)] transition-colors disabled:opacity-50 disabled:cursor-wait"
+
+    return (
+      <Show when={hasContent()}>
+        <div data-component="ourapp-docx-button" class="flex items-center gap-2 px-3 pt-2 pb-1">
+          <button type="button" onClick={() => callExport("preview")} disabled={busy()} class={btnClass}>
+            <Icon name="open-file" size="small" />
+            <span>Предпросмотр</span>
+          </button>
+          <button type="button" onClick={() => callExport("download")} disabled={busy()} class={btnClass}>
+            <Icon name="download" size="small" />
+            <span>{busy() ? "Создаём…" : "Скачать .docx"}</span>
+          </button>
+          <Show when={error()}>
+            <span class="text-[var(--color-error,#991B1B)] text-[12px]">{error()}</span>
+          </Show>
+        </div>
+      </Show>
+    )
+  }
+
   function TimelineRowFrame(input: { row: FramedTimelineRow; children: JSX.Element }) {
     const anchor = () => {
       const row = input.row
@@ -1142,6 +1233,9 @@ export function MessageTimeline(props: {
               <div data-slot="session-turn-assistant-content" aria-hidden={workingTurn(row.userMessageID)}>
                 {renderAssistantPartGroup(row)}
               </div>
+              <Show when={row.lastAssistantPart && !workingTurn(row.userMessageID)}>
+                <OurAppDocxButton userMessageID={row.userMessageID} />
+              </Show>
             </div>
           </TimelineRowFrame>
         )

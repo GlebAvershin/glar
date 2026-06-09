@@ -33,6 +33,13 @@ export interface ImageAttachmentPart {
   filename: string
   mime: string
   dataUrl: string
+  /**
+   * OurApp: для не-image attachment'ов (DOCX/XLSX/CSV) — извлечённый локально текст.
+   * При формировании запроса к LLM эта part заменяется на text-part с этим content'ом
+   * (см. build-request-parts.ts → expandDocumentAttachments).
+   * MIME для таких attachment'ов: "ourapp/office".
+   */
+  extractedText?: string
 }
 
 export type ContentPart = TextPart | FileAttachmentPart | AgentPart | ImageAttachmentPart

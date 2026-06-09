@@ -17,7 +17,13 @@ import { Identifier } from "@/utils/id"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 import { buildRequestParts } from "./build-request-parts"
 import { setCursorPosition } from "./editor-dom"
+import { guardSendCredits } from "@/ourapp/low-balance-guard"
 import { formatServerError } from "@/utils/server-errors"
+import { maskText } from "@/ourapp/pii/masker"
+import { getOrCreateVault } from "@/ourapp/pii/session-vaults"
+import { effectivePiiMode } from "@/ourapp/pii/settings-store"
+import { getAutoModelEnabled } from "@/ourapp/auto-model/store"
+import { pickAutoModel } from "@/ourapp/auto-model/resolve"
 
 type PendingPrompt = {
   abort: AbortController
@@ -46,13 +52,68 @@ type FollowupSendInput = {
   before?: () => Promise<boolean> | boolean
 }
 
-const draftText = (prompt: Prompt) => prompt.map((part) => ("content" in part ? part.content : "")).join("")
+// OurApp: DOCX/XLSX-attachment'ы храним как image-part с MIME="ourapp/office" и
+// extractedText (см. context/prompt.tsx). Сам файл LLM не нужен — нужен текст.
+const isOfficeDoc = (p: ImageAttachmentPart) =>
+  p.mime === "ourapp/office" && typeof p.extractedText === "string" && p.extractedText.length > 0
 
-const draftImages = (prompt: Prompt) => prompt.filter((part): part is ImageAttachmentPart => part.type === "image")
+// OurApp: скан-картинка с распознанным локально (OCR) текстом — MIME
+// "ourapp/scanned-doc". Для зарубежных моделей шлём ТЕКСТ (замаскированный),
+// для РФ-моделей — саму картинку (данные остаются в РФ).
+const isScannedDoc = (p: ImageAttachmentPart) =>
+  p.mime === "ourapp/scanned-doc" && typeof p.extractedText === "string" && p.extractedText.length > 0
+
+/**
+ * Текст запроса. inlineScans=true (зарубежная модель) → текст скана инлайнится
+ * вместо картинки. inlineScans=false (РФ-модель) → скан уходит картинкой, текст
+ * не дублируем.
+ */
+const draftText = (prompt: Prompt, inlineScans: boolean) => {
+  const main = prompt.map((part) => ("content" in part ? part.content : "")).join("")
+  const documents = prompt.filter(
+    (p): p is ImageAttachmentPart =>
+      p.type === "image" && (isOfficeDoc(p) || (inlineScans && isScannedDoc(p))),
+  )
+  if (documents.length === 0) return main
+  const docBlocks = documents
+    .map((d) => `[Документ: ${d.filename}]\n\n${d.extractedText}\n\n[Конец документа]\n`)
+    .join("\n---\n")
+  return main.trim().length > 0 ? `${docBlocks}\n\n${main}` : docBlocks
+}
+
+/**
+ * Картинки для отправки. Office-доки никогда не картинки. Сканы — картинками
+ * ТОЛЬКО для РФ-моделей (inlineScans=false); для зарубежных их заменяет текст.
+ */
+const draftImages = (prompt: Prompt, inlineScans: boolean) =>
+  prompt.filter(
+    (part): part is ImageAttachmentPart =>
+      part.type === "image" &&
+      !isOfficeDoc(part) &&
+      !(inlineScans && isScannedDoc(part)),
+  )
 
 export async function sendFollowupDraft(input: FollowupSendInput) {
-  const text = draftText(input.draft.prompt)
-  const images = draftImages(input.draft.prompt)
+  // OurApp: PII-маскирование (ТЗ-04). Перед отправкой в облачные модели
+  // (Claude/GPT) заменяем ФИО/паспорта/ИНН на плейсхолдеры; для РФ-моделей
+  // (GigaChat/YandexGPT) effectivePiiMode = "off" — данные и так в РФ.
+  const piiMode = effectivePiiMode(input.draft.model.modelID, input.draft.model.providerID)
+  // Скан-документы ВСЕГДА отправляем распознанным текстом, не картинкой:
+  //  - не-Vision модели (GigaChat Lite) картинку не принимают вовсе;
+  //  - зарубежным Vision-моделям картинку с ПДн слать нельзя (152-ФЗ) — нужен
+  //    замаскированный текст.
+  // Маскирование текста ниже применяется только при piiMode != off.
+  const inlineScans = true
+
+  const rawText = draftText(input.draft.prompt, inlineScans)
+  const images = draftImages(input.draft.prompt, inlineScans)
+
+  const text = (() => {
+    if (piiMode === "off") return rawText
+    const vault = getOrCreateVault(input.draft.sessionID)
+    return maskText(rawText, vault, { mode: piiMode }).maskedText
+  })()
+
   const [, setStore] = input.globalSync.child(input.draft.sessionDirectory)
 
   const setBusy = () => {
@@ -286,8 +347,9 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     })
   }
 
-  const handleSubmit = async (event: Event) => {
-    event.preventDefault()
+  const handleSubmit = async (event?: Event) => {
+    // event отсутствует при программном вызове (авто-сабмит сценария) — гард, иначе краш.
+    event?.preventDefault()
 
     const currentPrompt = prompt.current()
     const text = currentPrompt.map((part) => ("content" in part ? part.content : "")).join("")
@@ -393,6 +455,20 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       modelID: currentModel.id,
       providerID: currentModel.provider.id,
     }
+    // OurApp: режим «Авто» — анализируем запрос эвристикой и подменяем модель
+    // на самую подходящую (GigaChat/Claude) до сборки драфта. Выбор бесплатный,
+    // PII-маскирование завязано на modelID и сработает автоматически.
+    let autoVariant = variant
+    if (getAutoModelEnabled()) {
+      const pick = pickAutoModel({ text, hasDocument: images.length > 0 }, local.model.list())
+      if (pick && (pick.modelID !== model.modelID || pick.providerID !== model.providerID)) {
+        model.modelID = pick.modelID
+        model.providerID = pick.providerID
+        // Вариант (thinking и т.п.) привязан к ручной модели — для подменённой
+        // сбрасываем, чтобы не передать несовместимый вариант.
+        autoVariant = undefined
+      }
+    }
     const agent = currentAgent.name
     const context = prompt.context.items().slice()
     const draft: FollowupDraft = {
@@ -402,7 +478,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       context,
       agent,
       model,
-      variant,
+      variant: autoVariant,
     }
 
     const clearInput = () => {
@@ -561,7 +637,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       draft,
       messageID,
       optimisticBusy: sessionDirectory === projectDirectory,
-      before: waitForWorktree,
+      // OurApp: guard кредитов (low/zero) → потом ожидание worktree
+      before: async () => (await guardSendCredits()) && (await waitForWorktree()),
     }).catch((err) => {
       pending.delete(session.id)
       if (sessionDirectory === projectDirectory) {

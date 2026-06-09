@@ -6,6 +6,7 @@ import {
   Component,
   Show,
   onCleanup,
+  onMount,
   createMemo,
   createSignal,
   createResource,
@@ -32,7 +33,6 @@ import { useComments } from "@/context/comments"
 import { Button } from "@opencode-ai/ui/button"
 import { DockShellForm, DockTray } from "@opencode-ai/ui/dock-surface"
 import { Icon } from "@opencode-ai/ui/icon"
-import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
 import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Select } from "@opencode-ai/ui/select"
@@ -49,6 +49,8 @@ import { createSessionTabs } from "@/pages/session/helpers"
 import { createTextFragment, getCursorPosition, setCursorPosition, setRangeEdge } from "./prompt-input/editor-dom"
 import { createPromptAttachments } from "./prompt-input/attachments"
 import { ACCEPTED_FILE_TYPES } from "./prompt-input/files"
+import { markDocxSession } from "@/ourapp/scenarios/docx-result-tracker"
+import { ModelTriggerLabel } from "@/ourapp/auto-model/model-trigger-label"
 import {
   canNavigateHistoryAtCursor,
   navigatePromptHistory,
@@ -546,6 +548,66 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       setStore("placeholder", (prev) => (prev + 1) % EXAMPLES.length)
     }, 6500)
     onCleanup(() => clearInterval(interval))
+  })
+
+  // OurApp: библиотека сценариев в welcome-экране диспатчит "ourapp:scenario-pick"
+  // когда юзер кликает на карточку. Мы перехватываем и пред-заполняем prompt.
+  onMount(() => {
+    const handleScenarioPick = (event: Event) => {
+      const detail = (event as CustomEvent<{ prompt?: string }>).detail
+      if (!detail?.prompt) return
+      const text = detail.prompt
+      prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
+      // Фокусируем contenteditable, чтобы юзер мог сразу доредактировать или Enter.
+      queueMicrotask(() => {
+        if (editorRef) {
+          editorRef.focus()
+          // Позиционируем курсор в конец.
+          const range = document.createRange()
+          range.selectNodeContents(editorRef)
+          range.collapse(false)
+          const sel = window.getSelection()
+          sel?.removeAllRanges()
+          sel?.addRange(range)
+        }
+      })
+    }
+    window.addEventListener("ourapp:scenario-pick", handleScenarioPick)
+    onCleanup(() => window.removeEventListener("ourapp:scenario-pick", handleScenarioPick))
+
+    // OurApp: мастер сценария собрал prompt-части (текст + вложения) и шлёт их
+    // готовыми. Ставим в composer и авто-отправляем (реюз handleSubmit →
+    // streaming, guard кредитов, billing).
+    const handleScenarioRun = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          parts?: ContentPart[]
+          autoSubmit?: boolean
+          resultAction?: { type?: string }
+        }>
+      ).detail
+      const parts = detail?.parts
+      if (!parts || parts.length === 0) return
+      // Если сценарий генерирует .docx — помечаем сессию, чтобы кнопки
+      // «Скачать .docx / Предпросмотр» показались на ответе детерминированно,
+      // независимо от эвристики формы текста.
+      if (detail?.resultAction?.type === "generate_docx" && params.id) {
+        markDocxSession(params.id)
+      }
+      // Курсор — в конец последней текстовой части.
+      const lastText = [...parts].reverse().find((p) => p.type === "text")
+      const cursor = lastText && lastText.type === "text" ? lastText.content.length : 0
+      prompt.set(parts, cursor)
+      if (detail?.autoSubmit) {
+        queueMicrotask(() => {
+          void handleSubmit()
+        })
+        return
+      }
+      queueMicrotask(() => editorRef?.focus())
+    }
+    window.addEventListener("ourapp:scenario-run", handleScenarioRun)
+    onCleanup(() => window.removeEventListener("ourapp:scenario-run", handleScenarioRun))
   })
 
   const [composing, setComposing] = createSignal(false)
@@ -1300,7 +1362,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const designPlaceholder = () => {
     if (store.mode === "shell") return placeholder()
-    return "Ask anything, / for commands, @ for context..."
+    // OurApp: русифицированный placeholder, тон под аудиторию (юрист/бухгалтер).
+    return "Задайте уточняющий вопрос или запустите сценарий…"
   }
 
   const modelControl = () => (
@@ -1327,14 +1390,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 })
               }}
             >
-              <Show when={local.model.current()?.provider?.id}>
-                <ProviderIcon
-                  id={local.model.current()?.provider?.id ?? ""}
-                  class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                  style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-                />
-              </Show>
-              <span class="truncate">{local.model.current()?.name ?? language.t("dialog.model.select.title")}</span>
+              <ModelTriggerLabel />
               <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
             </Button>
           </TooltipKeybind>
@@ -1359,14 +1415,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             }}
             onClose={restoreFocus}
           >
-            <Show when={local.model.current()?.provider?.id}>
-              <ProviderIcon
-                id={local.model.current()?.provider?.id ?? ""}
-                class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-              />
-            </Show>
-            <span class="truncate">{local.model.current()?.name ?? language.t("dialog.model.select.title")}</span>
+            <ModelTriggerLabel />
             <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
           </ModelSelectorPopover>
         </TooltipKeybind>
@@ -1515,7 +1564,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     aria-label={language.t("prompt.action.attachFile")}
                   />
                 </TooltipKeybind>
-                <Show when={newSession()}>
+                {/* OurApp: branch/worktree селектор — IDE-фича. Только под VITE_OURAPP_SHOW_DEV. */}
+                <Show when={newSession() && import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
                   <div class="relative">
                     <div class="pointer-events-none absolute left-2 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center">
                       <Icon name="sliders" size="small" />
@@ -1803,16 +1853,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                                     })
                                   }}
                                 >
-                                  <Show when={local.model.current()?.provider?.id}>
-                                    <ProviderIcon
-                                      id={local.model.current()?.provider?.id ?? ""}
-                                      class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                                      style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-                                    />
-                                  </Show>
-                                  <span class="truncate">
-                                    {local.model.current()?.name ?? language.t("dialog.model.select.title")}
-                                  </span>
+                                  <ModelTriggerLabel />
                                   <Icon name="chevron-down" size="small" class="shrink-0" />
                                 </Button>
                               </TooltipKeybind>
@@ -1836,16 +1877,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                                 }}
                                 onClose={restoreFocus}
                               >
-                                <Show when={local.model.current()?.provider?.id}>
-                                  <ProviderIcon
-                                    id={local.model.current()?.provider?.id ?? ""}
-                                    class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                                    style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-                                  />
-                                </Show>
-                                <span class="truncate">
-                                  {local.model.current()?.name ?? language.t("dialog.model.select.title")}
-                                </span>
+                                <ModelTriggerLabel />
                                 <Icon name="chevron-down" size="small" class="shrink-0" />
                               </ModelSelectorPopover>
                             </TooltipKeybind>

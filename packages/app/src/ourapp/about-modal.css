@@ -1,0 +1,118 @@
+.ourapp-about-modal {
+  position: relative;
+  width: min(440px, calc(100vw - 32px));
+  background: var(--ourapp-bg-surface, #fff);
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-lg, 14px);
+  padding: 40px 32px 28px;
+  box-shadow: 0 24px 64px rgba(26, 22, 20, 0.18);
+  animation: ourapp-about-in 200ms var(--ourapp-ease, cubic-bezier(0.32, 0.72, 0.36, 1));
+}
+
+@keyframes ourapp-about-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ourapp-about-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  color: var(--text-tertiary, #8b8680);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--ourapp-duration-hover, 50ms) linear;
+}
+
+.ourapp-about-modal__close:hover {
+  background: var(--bg-inset, #f1ede3);
+}
+
+.ourapp-about-modal__brand {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ourapp-about-modal__mark {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 56px;
+  line-height: 1;
+  color: var(--ourapp-accent, #0b5345);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ourapp-about-modal__title {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #1a1614);
+  margin: 0;
+}
+
+.ourapp-about-modal__version {
+  font-size: 13px;
+  color: var(--text-tertiary, #8b8680);
+  margin: 4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-about-modal__lede {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary, #5c5852);
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.ourapp-about-modal__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hairline, #e8e3db);
+}
+
+.ourapp-about-modal__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--ourapp-accent, #0b5345);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ourapp-about-modal__link:hover {
+  text-decoration: underline;
+}
+
+.ourapp-about-modal__support {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary, #5c5852);
+  margin-bottom: 16px;
+}
+
+.ourapp-about-modal__copyright {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-tertiary, #8b8680);
+  margin: 0;
+}

@@ -1,0 +1,624 @@
+/* OurApp credits-page — стили страницы «Кредиты и подписка» (preview mockup 3). */
+
+.ourapp-credits {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family-sans);
+  color: light-dark(#5C5852, #B5AFA4);
+  background:
+    radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px) 0 0 / 4px 4px,
+    light-dark(#FBF9F4, #15120F);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.ourapp-credits__topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 32px;
+  border-bottom: 1px solid light-dark(#E8E3DB, #2E2924);
+  flex-shrink: 0;
+}
+
+.ourapp-credits__back {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: light-dark(#5C5852, #B5AFA4);
+  padding: 6px 12px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  cursor: pointer;
+  transition: all 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-credits__back:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-credits__crumb {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: light-dark(#8B8680, #847E72);
+}
+
+.ourapp-credits__main {
+  flex: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 40px 32px 48px;
+}
+
+.ourapp-credits__title {
+  font-family: var(--font-family-serif);
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: 400;
+  color: light-dark(#1A1614, #EDE8DF);
+  letter-spacing: -0.015em;
+  margin: 0 0 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid light-dark(#E8E3DB, #2E2924);
+}
+
+.ourapp-credits__title em {
+  font-style: italic;
+  color: light-dark(#0B5345, #1A8A6B);
+}
+
+.ourapp-credits__date {
+  font-style: normal;
+  color: light-dark(#5C5852, #B5AFA4);
+  font-size: 28px;
+}
+
+.ourapp-credits__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 840px) {
+  .ourapp-credits__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ourapp-credits__card {
+  background: light-dark(#FFFFFF, #1F1B17);
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+  border-radius: var(--ourapp-radius-lg, 14px);
+  padding: 24px 28px;
+  box-shadow:
+    0 1px 2px light-dark(rgba(26, 22, 20, 0.03), rgba(0, 0, 0, 0.3));
+}
+
+.ourapp-credits__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: light-dark(#8B8680, #847E72);
+  margin-bottom: 10px;
+}
+
+.ourapp-credits__balance {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ourapp-credits__balanceN {
+  font-family: var(--font-family-serif);
+  font-size: 36px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-credits__balanceSub {
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  color: light-dark(#5C5852, #B5AFA4);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-credits__progress {
+  margin: 20px 0 8px;
+}
+
+.ourapp-credits__progressBar {
+  height: 8px;
+  background: light-dark(#F1EDE3, #2B251F);
+  border-radius: var(--ourapp-radius-full, 9999px);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.ourapp-credits__progressFill {
+  height: 100%;
+  background: light-dark(#0B5345, #1A8A6B);
+  border-radius: inherit;
+  transition: width 240ms var(--ourapp-ease, ease);
+}
+
+.ourapp-credits__progressMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: light-dark(#5C5852, #B5AFA4);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-credits__progressMeta strong {
+  color: light-dark(#1A1614, #EDE8DF);
+  font-weight: 600;
+}
+
+/* ---- Rates card (inset) ---- */
+
+.ourapp-credits__rates {
+  margin-top: 20px;
+  padding: 16px 18px;
+  background: light-dark(#F6F2EB, #25201B);
+  border-radius: var(--ourapp-radius-md, 10px);
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+}
+
+.ourapp-credits__ratesHead {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: light-dark(#8B8680, #847E72);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.ourapp-credits__rate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-credits__rateDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ourapp-credits__rateName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ourapp-credits__rateMult {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  color: light-dark(#5C5852, #B5AFA4);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-credits__ratesFoot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid light-dark(#E8E3DB, #2E2924);
+  font-size: 11px;
+  color: light-dark(#8B8680, #847E72);
+  line-height: 1.5;
+}
+
+.ourapp-credits__pending {
+  font-size: 12px;
+  color: light-dark(#8B8680, #847E72);
+  padding: 6px 0;
+}
+
+/* ---- Actions ---- */
+
+.ourapp-credits__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* ---- Subscription meta-rows ---- */
+
+.ourapp-credits__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid light-dark(#E8E3DB, #2E2924);
+  font-size: 13px;
+}
+
+.ourapp-credits__row:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.ourapp-credits__rowLabel {
+  color: light-dark(#5C5852, #B5AFA4);
+}
+
+.ourapp-credits__rowValue {
+  color: light-dark(#1A1614, #EDE8DF);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ourapp-credits__rowMeta {
+  color: light-dark(#8B8680, #847E72);
+  font-weight: 400;
+  font-size: 11px;
+}
+
+/* ---- History ---- */
+
+.ourapp-credits__history {
+  margin-top: 8px;
+}
+
+.ourapp-credits__historyEmpty {
+  padding: 16px 0;
+  text-align: center;
+  font-size: 13px;
+  color: light-dark(#8B8680, #847E72);
+  font-style: italic;
+}
+
+/* ---- Notice (inline-фидбек после оплаты/смены тарифа) ---- */
+
+.ourapp-credits__notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--ourapp-radius-md, 10px);
+  border: 1px solid;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.ourapp-credits__notice--ok {
+  background: light-dark(#ECF6F1, #15251F);
+  border-color: light-dark(#B6DDCC, #1A8A6B);
+  color: light-dark(#0B5345, #4FBF9B);
+}
+
+.ourapp-credits__notice--error {
+  background: light-dark(#FBEDEC, #2A1A18);
+  border-color: light-dark(#E3B9B4, #7A3A33);
+  color: light-dark(#991B1B, #E08177);
+}
+
+.ourapp-credits__noticeClose {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.ourapp-credits__noticeClose:hover {
+  opacity: 1;
+}
+
+/* ---- История платежей (таблица) ---- */
+
+.ourapp-credits__table {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.ourapp-credits__table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: light-dark(#8B8680, #847E72);
+  padding: 8px 12px;
+  border-bottom: 1px solid light-dark(#E8E3DB, #2E2924);
+}
+
+.ourapp-credits__table td {
+  padding: 12px;
+  border-bottom: 1px solid light-dark(#F1EDE3, #25201B);
+  color: light-dark(#1A1614, #EDE8DF);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-credits__table tr:last-child td {
+  border-bottom: 0;
+}
+
+.ourapp-credits__cellRight {
+  text-align: right;
+}
+
+/* ---- Status badge ---- */
+
+.ourapp-credits__badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: var(--ourapp-radius-full, 9999px);
+  white-space: nowrap;
+}
+
+.ourapp-credits__badge--ok {
+  background: light-dark(#ECF6F1, #15251F);
+  color: light-dark(#0B5345, #4FBF9B);
+}
+
+.ourapp-credits__badge--fail {
+  background: light-dark(#FBEDEC, #2A1A18);
+  color: light-dark(#991B1B, #E08177);
+}
+
+.ourapp-credits__badge--pending {
+  background: light-dark(#F6F0E3, #2A2418);
+  color: light-dark(#8A6D1F, #C8A85C);
+}
+
+.ourapp-credits__badge--refund {
+  background: light-dark(#EEF0F4, #1B2025);
+  color: light-dark(#475569, #94A3B8);
+}
+
+/* ============================================================
+   Plan-change modal (ТЗ-02 §5.3)
+   ============================================================ */
+
+.ourapp-planmodal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(26, 22, 20, 0.45);
+  animation: ourapp-planmodal-fade 150ms var(--ourapp-ease, ease);
+}
+
+@keyframes ourapp-planmodal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ourapp-planmodal {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: light-dark(#FBF9F4, #15120F);
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+  border-radius: var(--ourapp-radius-lg, 14px);
+  box-shadow: 0 24px 48px light-dark(rgba(26, 22, 20, 0.18), rgba(0, 0, 0, 0.5));
+  padding: 24px 28px 20px;
+  font-family: var(--font-family-sans);
+}
+
+.ourapp-planmodal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.ourapp-planmodal__title {
+  font-family: var(--font-family-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: light-dark(#1A1614, #EDE8DF);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.ourapp-planmodal__close {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  color: light-dark(#8B8680, #847E72);
+  padding: 6px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+}
+
+.ourapp-planmodal__close:hover {
+  background: light-dark(#F1EDE3, #2B251F);
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-planmodal__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .ourapp-planmodal__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ourapp-planmodal__card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 8px;
+  padding: 18px;
+  background: light-dark(#FFFFFF, #1F1B17);
+  border: 1.5px solid light-dark(#E8E3DB, #2E2924);
+  border-radius: var(--ourapp-radius-md, 10px);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 150ms var(--ourapp-ease, ease);
+}
+
+.ourapp-planmodal__card:hover:not(:disabled) {
+  border-color: light-dark(#8B8680, #847E72);
+}
+
+.ourapp-planmodal__card--selected {
+  border-color: light-dark(#0B5345, #1A8A6B);
+  box-shadow: 0 0 0 3px light-dark(rgba(11, 83, 69, 0.12), rgba(26, 138, 107, 0.18));
+}
+
+.ourapp-planmodal__card--current {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.ourapp-planmodal__cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ourapp-planmodal__cardName {
+  font-family: var(--font-family-serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-planmodal__badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--ourapp-radius-full, 9999px);
+  background: light-dark(#F1EDE3, #2B251F);
+  color: light-dark(#8B8680, #847E72);
+}
+
+.ourapp-planmodal__price {
+  font-family: var(--font-family-serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+  font-variant-numeric: tabular-nums;
+}
+
+.ourapp-planmodal__priceMeta {
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: light-dark(#8B8680, #847E72);
+  margin-left: 4px;
+}
+
+.ourapp-planmodal__tagline {
+  font-size: 12px;
+  color: light-dark(#5C5852, #B5AFA4);
+  line-height: 1.4;
+  min-height: 32px;
+}
+
+.ourapp-planmodal__features {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ourapp-planmodal__feature {
+  position: relative;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: light-dark(#1A1614, #EDE8DF);
+  line-height: 1.4;
+}
+
+.ourapp-planmodal__feature::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: light-dark(#0B5345, #1A8A6B);
+  font-weight: 600;
+}
+
+.ourapp-planmodal__summary {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: light-dark(#F6F2EB, #25201B);
+  border: 1px solid light-dark(#E8E3DB, #2E2924);
+  font-size: 13px;
+  line-height: 1.5;
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-planmodal__summary--upgrade {
+  background: light-dark(#ECF6F1, #15251F);
+  border-color: light-dark(#B6DDCC, #1A8A6B);
+}
+
+.ourapp-planmodal__summary strong {
+  color: light-dark(#0B5345, #4FBF9B);
+}
+
+.ourapp-planmodal__warn {
+  margin-top: 8px;
+  font-size: 12px;
+  color: light-dark(#8A6D1F, #C8A85C);
+}
+
+.ourapp-planmodal__error {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: light-dark(#FBEDEC, #2A1A18);
+  border: 1px solid light-dark(#E3B9B4, #7A3A33);
+  color: light-dark(#991B1B, #E08177);
+  font-size: 13px;
+}
+
+.ourapp-planmodal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ourapp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

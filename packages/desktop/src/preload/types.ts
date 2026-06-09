@@ -31,6 +31,8 @@ export type FatalRendererError = {
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
+  /** OurApp: рендер HTML → PDF (ArrayBuffer) через offscreen Chromium. */
+  printToPDF: (html: string) => Promise<ArrayBuffer>
   awaitInitialization: (onStep: (step: InitStep) => void) => Promise<ServerReadyData>
   getWindowConfig: () => Promise<WindowConfig>
   consumeInitialDeepLinks: () => Promise<string[]>

@@ -1,0 +1,336 @@
+.ourapp-wiz {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--ourapp-bg-page, #fbf9f4);
+  background-image: var(--ourapp-grain-light, none);
+  background-size: var(--ourapp-grain-size, 4px 4px);
+  animation: ourapp-wiz-in var(--ourapp-duration-enter, 150ms) var(--ourapp-ease, ease-out);
+}
+
+@keyframes ourapp-wiz-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ourapp-wiz__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 48px 0;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ourapp-wiz__eyebrow {
+  font-family: var(--font-family-mono, "JetBrains Mono", monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #8b8680);
+}
+
+.ourapp-wiz__title {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #1a1614);
+  margin: 4px 0 0;
+}
+
+.ourapp-wiz__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #5c5852);
+  cursor: pointer;
+  transition: background var(--ourapp-duration-hover, 50ms) linear;
+}
+
+.ourapp-wiz__close:hover {
+  background: var(--bg-inset, #f1ede3);
+}
+
+.ourapp-wiz__progress {
+  max-width: 760px;
+  width: 100%;
+  margin: 24px auto 0;
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ourapp-wiz__progressText {
+  font-size: 13px;
+  color: var(--text-tertiary, #8b8680);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ourapp-wiz__dots {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.ourapp-wiz__dot {
+  height: 4px;
+  flex: 1;
+  border-radius: 9999px;
+  background: var(--hairline-strong, #d8d2c5);
+  transition: background 150ms ease;
+}
+
+.ourapp-wiz__dot--active {
+  background: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__dot--done {
+  background: var(--ourapp-accent, #0b5345);
+  opacity: 0.45;
+}
+
+.ourapp-wiz__body {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 48px;
+}
+
+.ourapp-wiz__field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ourapp-wiz__label {
+  font-family: var(--font-family-serif, "IBM Plex Serif", serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-primary, #1a1614);
+  line-height: 1.25;
+}
+
+.ourapp-wiz__required {
+  color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__hint {
+  font-size: 14px;
+  color: var(--text-secondary, #5c5852);
+  margin: -4px 0 4px;
+  line-height: 1.5;
+}
+
+.ourapp-wiz__input,
+.ourapp-wiz__textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--hairline-strong, #d8d2c5);
+  border-radius: var(--ourapp-radius-sm, 6px);
+  background: var(--ourapp-bg-surface, #fff);
+  color: var(--text-primary, #1a1614);
+  font-family: var(--font-family-sans, "Onest", sans-serif);
+  font-size: 15px;
+  line-height: 1.5;
+  transition: border-color var(--ourapp-duration-hover, 50ms) linear;
+}
+
+.ourapp-wiz__input:focus,
+.ourapp-wiz__textarea:focus {
+  outline: none;
+  border-color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.ourapp-wiz__radios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ourapp-wiz__radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline-strong, #d8d2c5);
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: var(--ourapp-bg-surface, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 50ms linear, background 50ms linear;
+}
+
+.ourapp-wiz__radio:hover {
+  border-color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__radio--active {
+  border-color: var(--ourapp-accent, #0b5345);
+  background: var(--accent-muted, rgba(11, 83, 69, 0.06));
+}
+
+.ourapp-wiz__radioDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid var(--hairline-strong, #d8d2c5);
+  margin-top: 1px;
+  flex-shrink: 0;
+  transition: border-color 50ms linear;
+  position: relative;
+}
+
+.ourapp-wiz__radio--active .ourapp-wiz__radioDot {
+  border-color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__radio--active .ourapp-wiz__radioDot::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  background: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__radioBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ourapp-wiz__radioLabel {
+  font-size: 15px;
+  color: var(--text-primary, #1a1614);
+}
+
+.ourapp-wiz__radioDesc {
+  font-size: 13px;
+  color: var(--text-tertiary, #8b8680);
+}
+
+.ourapp-wiz__upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ourapp-wiz__uploadInput {
+  display: none;
+}
+
+.ourapp-wiz__uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 12px 18px;
+  border: 1px dashed var(--hairline-strong, #d8d2c5);
+  border-radius: var(--ourapp-radius-md, 10px);
+  background: var(--ourapp-bg-surface, #fff);
+  color: var(--text-primary, #1a1614);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 50ms linear;
+}
+
+.ourapp-wiz__uploadBtn:hover {
+  border-color: var(--ourapp-accent, #0b5345);
+}
+
+.ourapp-wiz__uploadFormats {
+  font-family: var(--font-family-mono, monospace);
+  font-size: 11px;
+  color: var(--text-tertiary, #8b8680);
+  text-transform: uppercase;
+}
+
+.ourapp-wiz__fileList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ourapp-wiz__fileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--hairline, #e8e3db);
+  border-radius: var(--ourapp-radius-sm, 6px);
+  background: var(--ourapp-bg-surface, #fff);
+}
+
+.ourapp-wiz__fileName {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary, #1a1614);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ourapp-wiz__fileRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #8b8680);
+  cursor: pointer;
+}
+
+.ourapp-wiz__fileRemove:hover {
+  background: var(--bg-inset, #f1ede3);
+  color: var(--error, #991b1b);
+}
+
+.ourapp-wiz__error {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  background: var(--error-muted, rgba(153, 27, 27, 0.1));
+  color: var(--error, #991b1b);
+  font-size: 14px;
+}
+
+.ourapp-wiz__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 48px 32px;
+  border-top: 1px solid var(--hairline, #e8e3db);
+}

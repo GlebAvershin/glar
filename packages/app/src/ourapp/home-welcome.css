@@ -1,0 +1,325 @@
+/* OurApp Home — landing-page стили.
+ *
+ * НЕТ sidebar. Full-page по центру. Большой hero + один CTA + компактный recent.
+ * Это намеренно ДРУГОЕ ощущение чем у NewSession (рабочий экран с библиотекой).
+ */
+
+.ourapp-landing {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family-sans);
+  color: light-dark(#5C5852, #B5AFA4);
+  background:
+    radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px) 0 0 / 4px 4px,
+    light-dark(#FBF9F4, #15120F);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ---- Top bar (brand + nav) ---- */
+
+.ourapp-landing__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid light-dark(#E8E3DB, #2E2924);
+  flex-shrink: 0;
+}
+
+.ourapp-landing__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.ourapp-landing__brandname {
+  font-family: var(--font-family-serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+  letter-spacing: -0.01em;
+}
+
+.ourapp-landing__brandname::first-letter {
+  color: light-dark(#0B5345, #1A8A6B);
+}
+
+.ourapp-landing__vertical {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: light-dark(#8B8680, #847E72);
+  padding: 4px 8px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  cursor: pointer;
+  transition: all 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-landing__vertical:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+.ourapp-landing__nav {
+  display: flex;
+  gap: 4px;
+}
+
+.ourapp-landing__navbtn {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: light-dark(#5C5852, #B5AFA4);
+  padding: 7px 14px;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  cursor: pointer;
+  transition: all 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-landing__navbtn:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+  color: light-dark(#1A1614, #EDE8DF);
+}
+
+/* ---- Main (hero center + recent right) ---- */
+
+.ourapp-landing__main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 64px;
+  padding: 80px 80px 64px;
+  align-items: start;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1080px) {
+  .ourapp-landing__main {
+    grid-template-columns: 1fr;
+    padding: 56px 32px 48px;
+    gap: 40px;
+  }
+}
+
+/* ---- Hero (центр-лево) ---- */
+
+.ourapp-landing__hero {
+  max-width: 640px;
+}
+
+.ourapp-landing__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-family-sans);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: light-dark(#0B5345, #1A8A6B);
+  margin-bottom: 24px;
+  padding: 6px 14px;
+  background: light-dark(rgba(11, 83, 69, 0.07), rgba(26, 138, 107, 0.15));
+  border-radius: 999px;
+}
+
+.ourapp-landing__eyebrowdot {
+  opacity: 0.4;
+}
+
+.ourapp-landing__eyebrowrole {
+  color: light-dark(#1A1614, #EDE8DF);
+  font-weight: 500;
+}
+
+.ourapp-landing__title {
+  font-family: var(--font-family-serif);
+  font-size: 64px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  color: light-dark(#1A1614, #EDE8DF);
+  margin: 0 0 28px;
+}
+
+.ourapp-landing__title em {
+  font-style: italic;
+  color: light-dark(#0B5345, #1A8A6B);
+}
+
+@media (max-width: 720px) {
+  .ourapp-landing__title {
+    font-size: 44px;
+  }
+}
+
+.ourapp-landing__lede {
+  font-size: 17px;
+  line-height: 1.55;
+  color: light-dark(#5C5852, #B5AFA4);
+  max-width: 540px;
+  margin: 0 0 40px;
+}
+
+.ourapp-landing__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ourapp-landing__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--ourapp-radius-md, 10px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 180ms var(--ourapp-ease, ease);
+  letter-spacing: -0.005em;
+}
+
+.ourapp-landing__cta--primary {
+  background: light-dark(#0B5345, #1A8A6B);
+  color: light-dark(#FBF9F4, #EDE8DF);
+  box-shadow:
+    0 2px 8px light-dark(rgba(11, 83, 69, 0.25), rgba(0, 0, 0, 0.4)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.ourapp-landing__cta--primary:hover {
+  background: light-dark(#0D6B58, #1FA17F);
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 14px light-dark(rgba(11, 83, 69, 0.3), rgba(0, 0, 0, 0.5)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ---- Recent (правая колонка) ---- */
+
+.ourapp-landing__recent {
+  border-left: 1px solid light-dark(#E8E3DB, #2E2924);
+  padding-left: 32px;
+  padding-top: 8px;
+}
+
+@media (max-width: 1080px) {
+  .ourapp-landing__recent {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid light-dark(#E8E3DB, #2E2924);
+    padding-top: 32px;
+  }
+}
+
+.ourapp-landing__recenthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.ourapp-landing__recenttitle {
+  font-family: var(--font-family-serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: light-dark(#1A1614, #EDE8DF);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.ourapp-landing__recentcount {
+  font-size: 11px;
+  color: light-dark(#8B8680, #847E72);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ourapp-landing__recentlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ourapp-landing__recentitem {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--ourapp-radius-sm, 6px);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms var(--ourapp-ease, ease);
+}
+
+.ourapp-landing__recentitem:hover {
+  background: light-dark(rgba(26, 22, 20, 0.04), rgba(255, 255, 255, 0.05));
+}
+
+.ourapp-landing__recentline {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ourapp-landing__recentdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: light-dark(#0B5345, #1A8A6B);
+  opacity: 0.5;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.ourapp-landing__recentbody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ourapp-landing__recenttext {
+  font-size: 13px;
+  color: light-dark(#1A1614, #EDE8DF);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ourapp-landing__recentmeta {
+  font-size: 11px;
+  color: light-dark(#8B8680, #847E72);
+}
+
+/* ---- Footer ---- */
+
+.ourapp-landing__foot {
+  padding: 16px 40px;
+  border-top: 1px solid light-dark(#E8E3DB, #2E2924);
+  font-size: 11px;
+  color: light-dark(#8B8680, #847E72);
+  text-align: center;
+  flex-shrink: 0;
+}

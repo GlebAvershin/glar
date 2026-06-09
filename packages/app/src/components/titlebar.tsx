@@ -496,8 +496,8 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
               <Show when={windows() || linux()}>
                 <WindowsAppMenu command={command} platform={platform} />
               </Show>
-              <Show when={mac()}>
-                {/*<div class="h-full shrink-0" style={{ width: `${72 / zoom()}px` }} />*/}
+              {/* OurApp: mobile sidebar burger (≡) — скрыт, у нас sidebar всегда видим. */}
+              <Show when={mac() && import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
                 <div class="xl:hidden w-10 shrink-0 flex items-center justify-center">
                   <IconButton
                     icon="menu"
@@ -509,7 +509,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                   />
                 </div>
               </Show>
-              <Show when={!mac()}>
+              <Show when={!mac() && import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
                 <div class="xl:hidden w-[48px] shrink-0 flex items-center justify-center">
                   <IconButton
                     icon="menu"
@@ -522,22 +522,25 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                 </div>
               </Show>
               <div class="flex items-center gap-1 shrink-0">
-                <TooltipKeybind
-                  class={web() ? "hidden xl:flex shrink-0 ml-14" : "hidden xl:flex shrink-0 ml-2"}
-                  placement="bottom"
-                  title={language.t("command.sidebar.toggle")}
-                  keybind={command.keybind("sidebar.toggle")}
-                >
-                  <Button
-                    variant="ghost"
-                    class="group/sidebar-toggle titlebar-icon w-8 h-6 p-0 box-border"
-                    onClick={layout.sidebar.toggle}
-                    aria-label={language.t("command.sidebar.toggle")}
-                    aria-expanded={layout.sidebar.opened()}
+                {/* OurApp: ⊞ sidebar-toggle — скрыт, у нас sidebar всегда видим. */}
+                <Show when={import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
+                  <TooltipKeybind
+                    class={web() ? "hidden xl:flex shrink-0 ml-14" : "hidden xl:flex shrink-0 ml-2"}
+                    placement="bottom"
+                    title={language.t("command.sidebar.toggle")}
+                    keybind={command.keybind("sidebar.toggle")}
                   >
-                    <Icon size="small" name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />
-                  </Button>
-                </TooltipKeybind>
+                    <Button
+                      variant="ghost"
+                      class="group/sidebar-toggle titlebar-icon w-8 h-6 p-0 box-border"
+                      onClick={layout.sidebar.toggle}
+                      aria-label={language.t("command.sidebar.toggle")}
+                      aria-expanded={layout.sidebar.opened()}
+                    >
+                      <Icon size="small" name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />
+                    </Button>
+                  </TooltipKeybind>
+                </Show>
                 <div class="hidden xl:flex items-center shrink-0">
                   <Show when={params.dir}>
                     <div
@@ -582,7 +585,8 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                       "duration-180 ease-in": layout.sidebar.opened(),
                     }}
                   >
-                    <Show when={hasProjects() && nav()}>
+                    {/* OurApp: chevron-left / chevron-right (back/forward по проектам) скрыты. */}
+                    <Show when={hasProjects() && nav() && import.meta.env.VITE_OURAPP_SHOW_DEV === "true"}>
                       <div class="flex items-center gap-0 transition-transform">
                         <Tooltip placement="bottom" value={language.t("common.goBack")} openDelay={2000}>
                           <Button
@@ -756,9 +760,12 @@ function NewSessionTabItem(props: { href: string; title: string; onClose: () => 
 }
 
 function ChannelIndicator() {
+  // OurApp: бейдж канала показываем только если явно включён (VITE_OURAPP_SHOW_DEV=true).
+  // Иначе пользователь видит чистый UI без признаков dev-сборки.
+  const enabled = import.meta.env.VITE_OURAPP_SHOW_DEV === "true"
   return (
     <>
-      {["beta", "dev"].includes(import.meta.env.VITE_OPENCODE_CHANNEL) && (
+      {enabled && ["beta", "dev"].includes(import.meta.env.VITE_OPENCODE_CHANNEL) && (
         <div class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono">
           {import.meta.env.VITE_OPENCODE_CHANNEL.toUpperCase()}
         </div>
