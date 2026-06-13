@@ -24,6 +24,7 @@ import { getOrCreateVault } from "@/ourapp/pii/session-vaults"
 import { effectivePiiMode } from "@/ourapp/pii/settings-store"
 import { getAutoModelEnabled } from "@/ourapp/auto-model/store"
 import { pickAutoModel } from "@/ourapp/auto-model/resolve"
+import { getDeepThinkingEnabled, isReasoningModel, DEEP_THINKING_VARIANT } from "@/ourapp/deep-thinking/store"
 
 type PendingPrompt = {
   abort: AbortController
@@ -468,6 +469,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         // сбрасываем, чтобы не передать несовместимый вариант.
         autoVariant = undefined
       }
+    }
+    // OurApp: режим «Углублённое размышление». ВКЛ → для reasoning-моделей Claude
+    // выставляем variant "high" → opencode переводит его в нативный thinking-бюджет
+    // Anthropic (extended thinking). Для не-Claude/РФ моделей — no-op (variant
+    // невалиден для них, opencode его игнорирует), но гейтим явно для чистоты.
+    if (getDeepThinkingEnabled() && isReasoningModel(model.modelID)) {
+      autoVariant = DEEP_THINKING_VARIANT
     }
     const agent = currentAgent.name
     const context = prompt.context.items().slice()

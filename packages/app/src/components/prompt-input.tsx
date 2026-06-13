@@ -51,6 +51,7 @@ import { createPromptAttachments } from "./prompt-input/attachments"
 import { ACCEPTED_FILE_TYPES } from "./prompt-input/files"
 import { markDocxSession } from "@/ourapp/scenarios/docx-result-tracker"
 import { ModelTriggerLabel } from "@/ourapp/auto-model/model-trigger-label"
+import { DeepThinkingToggle } from "@/ourapp/deep-thinking/deep-thinking-toggle"
 import {
   canNavigateHistoryAtCursor,
   navigatePromptHistory,
@@ -1368,6 +1369,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const modelControl = () => (
     <Show when={!providersLoading()}>
+      <DeepThinkingToggle />
       <Show
         when={providers.paid().length > 0}
         fallback={
@@ -1827,6 +1829,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     </Show>
                     <Show when={!providersLoading()}>
                       <Show when={store.mode !== "shell"}>
+                        <DeepThinkingToggle
+                          style={providersShouldFadeIn() ? { animation: "fade-in 0.3s" } : undefined}
+                        />
                         <div
                           data-component="prompt-model-control"
                           style={providersShouldFadeIn() ? { animation: "fade-in 0.3s" } : undefined}

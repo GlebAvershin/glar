@@ -3,7 +3,7 @@ import { base64Encode } from "@opencode-ai/core/util/encode"
 import { useParams } from "@solidjs/router"
 import { batch, createEffect, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
-import { useModels, HIDDEN_MODEL_PROVIDERS } from "@/context/models"
+import { useModels, HIDDEN_MODEL_PROVIDERS, HIDDEN_MODEL_ID_PATTERN } from "@/context/models"
 import { useProviders } from "@/hooks/use-providers"
 import { Persist, persisted } from "@/utils/persist"
 import { cycleModelVariant, getConfiguredAgentVariant, resolveModelVariant } from "./model-variant"
@@ -90,9 +90,10 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     })
 
     const validModel = (model: ModelKey) => {
-      // OurApp: скрытые провайдеры (opencode Zen) невалидны — чтобы выбор/фоллбэк
-      // не садился на них (см. HIDDEN_MODEL_PROVIDERS в context/models.tsx).
+      // OurApp: скрытые провайдеры (opencode Zen) и модели-фантомы (Fable, не в шлюзе)
+      // невалидны — чтобы выбор/фоллбэк на них не садился (см. context/models.tsx).
       if (HIDDEN_MODEL_PROVIDERS.has(model.providerID)) return false
+      if (HIDDEN_MODEL_ID_PATTERN.test(model.modelID)) return false
       const provider = providers.all().get(model.providerID)
       return !!provider?.models[model.modelID] && connected().has(model.providerID)
     }

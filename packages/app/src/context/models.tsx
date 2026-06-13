@@ -15,6 +15,13 @@ export type ModelKey = { providerID: string; modelID: string }
 // и из списка (available ниже), и из выбора по умолчанию (validModel в local.tsx).
 export const HIDDEN_MODEL_PROVIDERS = new Set(["opencode", "opencode-go"])
 
+// OurApp: конкретные модели-«фантомы» из каталога models.dev, НЕ заведённые/недоступные
+// в нашем шлюзе → выбор даёт ошибку. Claude Fable 5 у Anthropic сейчас недоступна
+// (прямой вызов: 404 "Claude Fable 5 is not available. Please use Opus 4.8"). Прячем по
+// паттерну id. Когда модель реально появится и будет заведена в litellm-config.yaml —
+// убрать из паттерна.
+export const HIDDEN_MODEL_ID_PATTERN = /fable/i
+
 type Visibility = "show" | "hide"
 type User = ModelKey & { visibility: Visibility; favorite?: boolean }
 type Store = {
@@ -48,10 +55,12 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         .connected()
         .filter((p) => !HIDDEN_MODEL_PROVIDERS.has(p.id))
         .flatMap((p) =>
-          Object.values(p.models).map((m) => ({
-            ...m,
-            provider: p,
-          })),
+          Object.values(p.models)
+            .filter((m) => !HIDDEN_MODEL_ID_PATTERN.test(m.id))
+            .map((m) => ({
+              ...m,
+              provider: p,
+            })),
         ),
     )
 
