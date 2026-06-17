@@ -18,8 +18,8 @@ export const accPrimaryDocCheck: Scenario = {
       id: "document",
       type: "file_upload",
       label: "Загрузите первичный документ",
-      hint: "Счёт-фактура, УПД, акт, накладная (PDF / DOCX / XLSX).",
-      accept: [".pdf", ".docx", ".xlsx"],
+      hint: "Счёт-фактура, УПД, акт, накладная: PDF / DOCX / XLSX или фото/скан (распознаём локально).",
+      accept: [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png", ".webp"],
       required: true,
     },
     {

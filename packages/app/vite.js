@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readFileSync, createReadStream, existsSync } from "node:fs"
 import solidPlugin from "vite-plugin-solid"
 import tailwindcss from "@tailwindcss/vite"
 import { fileURLToPath } from "url"
@@ -32,6 +32,29 @@ export default [
           format: "es",
         },
       }
+    },
+  },
+  {
+    // Tesseract.js OCR core'ы названы `*.wasm.js`. Vite dev-сервер отдаёт их с
+    // Content-Type: text/html (из-за `.wasm` в имени попадают не в статику, а в
+    // SPA-fallback). importScripts() в web-worker'е строго требует JS-MIME →
+    // падает NetworkError, и весь локальный OCR сканов (ТЗ-04) не работает.
+    // Отдаём эти файлы сами с text/javascript. Только dev — в prod статику
+    // отдаёт electron, MIME по расширению корректен.
+    name: "opencode-desktop:tesseract-wasm-js-mime",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url ?? "").split("?")[0]
+        if (/^\/tesseract\/.+\.wasm\.js$/.test(url)) {
+          const filePath = fileURLToPath(new URL("./public" + url, import.meta.url))
+          if (existsSync(filePath)) {
+            res.setHeader("Content-Type", "text/javascript")
+            createReadStream(filePath).pipe(res)
+            return
+          }
+        }
+        next()
+      })
     },
   },
   {

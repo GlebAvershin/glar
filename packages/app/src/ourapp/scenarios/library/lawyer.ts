@@ -19,8 +19,8 @@ export const lawyerContractReview: Scenario = {
       id: "document",
       type: "file_upload",
       label: "Загрузите договор",
-      hint: "PDF или DOCX. Сканы лучше проверять на Claude Sonnet/Opus.",
-      accept: [".pdf", ".docx"],
+      hint: "PDF, DOCX или фото/скан (распознаём текст локально). Сканы точнее на Claude Sonnet/Opus.",
+      accept: [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".webp"],
       required: true,
     },
     {
@@ -132,7 +132,7 @@ export const lawyerClaim: Scenario = {
       id: "has_attached_contract",
       type: "file_upload",
       label: "Приложить договор (необязательно)",
-      accept: [".pdf", ".docx"],
+      accept: [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".webp"],
     },
   ],
   promptTemplate: `Ты — опытный юрист. Подготовь досудебную претензию по праву РФ.
@@ -159,8 +159,8 @@ export const lawyerCompareVersions: Scenario = {
   // Сравнительный отчёт (таблица различий), а не новый документ → в чате.
   resultAction: { type: "show_in_chat" },
   steps: [
-    { id: "version_a", type: "file_upload", label: "Первая редакция", accept: [".pdf", ".docx"], required: true },
-    { id: "version_b", type: "file_upload", label: "Вторая редакция", accept: [".pdf", ".docx"], required: true },
+    { id: "version_a", type: "file_upload", label: "Первая редакция", accept: [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".webp"], required: true },
+    { id: "version_b", type: "file_upload", label: "Вторая редакция", accept: [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".webp"], required: true },
     {
       id: "party_side",
       type: "select",
@@ -188,7 +188,7 @@ export const lawyerSummary: Scenario = {
   preferredModel: "gigachat-pro",
   resultAction: { type: "show_in_chat" },
   steps: [
-    { id: "document", type: "file_upload", label: "Загрузите документ", accept: [".pdf", ".docx"], required: true },
+    { id: "document", type: "file_upload", label: "Загрузите документ", accept: [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".webp"], required: true },
     {
       id: "purpose",
       type: "text",
