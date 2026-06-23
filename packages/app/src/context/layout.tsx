@@ -456,6 +456,19 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       })
     })
 
+    // OurApp (веб): у веб-продукта нет понятия «папка проекта» — пользователь не
+    // выбирает директорию. Авто-открываем единственный вестигиальный проект "/"
+    // (его же отдаёт движок в /project), иначе «Начать новую задачу» зовёт
+    // несуществующий на вебе пикер папок. На desktop проекты приходят из sidecar —
+    // эффект не вмешивается (platform !== "web").
+    if (platform.platform === "web") {
+      createEffect(() => {
+        if (!server.ready()) return
+        if (server.projects.list().length > 0) return
+        server.projects.open("/")
+      })
+    }
+
     const enriched = createMemo(() => server.projects.list().map(enrich))
     const list = createMemo(() => {
       const projects = enriched()

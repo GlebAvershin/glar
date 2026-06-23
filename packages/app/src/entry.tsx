@@ -8,6 +8,7 @@ import { dict as en } from "@/i18n/en"
 import { dict as zh } from "@/i18n/zh"
 import { handleNotificationClick } from "@/utils/notification-click"
 import { authFromToken } from "@/utils/server"
+import { getSessionToken } from "@/ourapp/auth-storage"
 import pkg from "../package.json"
 import { ServerConnection } from "./context/server"
 
@@ -154,7 +155,13 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 if (root instanceof HTMLElement) {
-  const auth = authFromToken(new URLSearchParams(location.search).get("auth_token"))
+  // Веб-auth к движку: пароль соединения = billing-JWT. Приоритет — одноразовый
+  // ?auth_token (bootstrap при редиректе), иначе сохранённая сессия из localStorage,
+  // чтобы перезагрузка страницы не теряла авторизацию (URL-токен вычищается сразу).
+  const sessionJwt = getSessionToken()
+  const auth =
+    authFromToken(new URLSearchParams(location.search).get("auth_token")) ??
+    (sessionJwt ? { username: "opencode", password: sessionJwt } : undefined)
   clearAuthToken()
   const server: ServerConnection.Http = {
     type: "http",

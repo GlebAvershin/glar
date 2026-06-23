@@ -12,11 +12,13 @@
 import { createSignal, Show, type Component } from "solid-js"
 import { billingApi } from "./billing-api"
 import { setSessionToken } from "./auth-storage"
+import { usePlatform } from "@/context/platform"
 import type { Vertical } from "./scenario-library"
 
 type Step = "welcome" | "email" | "verify" | "done"
 
 export const OnboardingPage: Component<{ onDone: () => void }> = (props) => {
+  const platform = usePlatform()
   const [step, setStep] = createSignal<Step>("welcome")
   const [vertical, setVertical] = createSignal<Vertical>("lawyer")
   const [email, setEmail] = createSignal("")
@@ -79,6 +81,14 @@ export const OnboardingPage: Component<{ onDone: () => void }> = (props) => {
     }
     setSessionToken(res.data.token)
     setStep("done")
+    // На вебе пароль соединения с движком берётся из сохранённого JWT при
+    // bootstrap (entry.tsx). Соединение уже создано без пароля → перезагружаем,
+    // чтобы entry.tsx пересобрал его с JWT. Гейт онбординга не покажется снова
+    // (isLoggedIn=true). На desktop (sidecar-auth) — обычный callback без reload.
+    if (platform.platform === "web") {
+      window.location.reload()
+      return
+    }
     props.onDone()
   }
 
