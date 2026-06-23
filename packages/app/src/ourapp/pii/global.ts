@@ -10,7 +10,7 @@
  *
  * Импортировать этот файл один раз в app.tsx (side-effect).
  */
-import { getVault } from "./session-vaults"
+import { unmaskWithFallback } from "./session-vaults"
 
 declare global {
   interface Window {
@@ -19,12 +19,10 @@ declare global {
 }
 
 if (typeof window !== "undefined") {
-  window.ourappUnmask = (text: string, sessionId?: string) => {
-    if (!text || !sessionId) return text
-    const vault = getVault(sessionId)
-    if (!vault || vault.size === 0) return text
-    return vault.unmask(text)
-  }
+  // sessionId может прийти пустым (баг рендера на вебе — message.sessionID иногда не
+  // проставлен) → unmaskWithFallback демаскирует по всем загруженным vault'ам.
+  // Персист vault'ов в localStorage (session-vaults) даёт демаскирование после reload.
+  window.ourappUnmask = (text: string, sessionId?: string) => unmaskWithFallback(text, sessionId)
 }
 
 export {}

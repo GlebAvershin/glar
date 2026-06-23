@@ -46,10 +46,23 @@ export function normalizeValue(type: PiiType, value: string): string {
   }
 }
 
+/** Сериализованное состояние vault'а (для персиста между перезагрузками). */
+export interface PiiVaultState {
+  map: Array<[string, string]>
+  reverse: Array<[string, string]>
+  counters: Array<[PiiType, number]>
+}
+
 export class PiiVault {
   private map = new Map<string, string>() // placeholder → original value
   private reverse = new Map<string, string>() // normKey → placeholder
   private counters = new Map<PiiType, number>()
+  /** Вызывается после изменения словаря — чтобы вызывающий мог персистнуть состояние. */
+  onMutate?: () => void
+
+  constructor(onMutate?: () => void) {
+    this.onMutate = onMutate
+  }
 
   /** Получить (или создать) плейсхолдер для значения. */
   placeholderFor(type: PiiType, value: string): string {
@@ -61,6 +74,7 @@ export class PiiVault {
     const ph = `__PII_${LABEL[type]}_${n}__`
     this.map.set(ph, value)
     this.reverse.set(norm, ph)
+    this.onMutate?.()
     return ph
   }
 
@@ -69,11 +83,24 @@ export class PiiVault {
     return this.map.size
   }
 
+  /** Снимок состояния для сериализации/персиста. */
+  toState(): PiiVaultState {
+    return { map: [...this.map], reverse: [...this.reverse], counters: [...this.counters] }
+  }
+
+  /** Восстановить из снимка (НЕ дёргает onMutate). */
+  restore(state: PiiVaultState): void {
+    this.map = new Map(state.map)
+    this.reverse = new Map(state.reverse)
+    this.counters = new Map(state.counters)
+  }
+
   /** Очистить (при закрытии сессии). */
   clear() {
     this.map.clear()
     this.reverse.clear()
     this.counters.clear()
+    this.onMutate?.()
   }
 
   /**
