@@ -101,6 +101,12 @@ if (!(root instanceof HTMLElement) && import.meta.env.DEV) {
 }
 
 const getCurrentUrl = () => {
+  // Прод-деплой: URL движка («engine»). По умолчанию — same-origin (location.origin),
+  // т.е. ожидается reverse-proxy, отдающий статику + проксирующий API движка на одном
+  // домене (без CORS). Если движок на отдельном домене — задать VITE_OURAPP_ENGINE_URL
+  // на этапе сборки (vite build), напр. https://api.paragraf.app. См. DEPLOY.md.
+  const engineUrl = import.meta.env.VITE_OURAPP_ENGINE_URL
+  if (engineUrl) return String(engineUrl).replace(/\/+$/, "")
   if (location.hostname.includes("opencode.ai")) return "http://localhost:4096"
   if (import.meta.env.DEV)
     return `http://${import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
