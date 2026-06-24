@@ -48,11 +48,28 @@ function mulberry32(seed: number): () => number {
   }
 }
 
+// Сид шифра выводим из СТАБИЛЬНОГО per-user значения — claim `sub` (id юзера) из JWT,
+// а НЕ из всего токена: токен меняется при каждом логине (новые iat/exp), и если
+// ключ зависит от него, повторный вход → другой ключ → старые vault'ы не читаются и
+// стираются (юзер теряет демаскирование истории). `sub` стабилен между логинами того
+// же юзера; у другого юзера другой sub → его vault'ы не читаются (гигиена сохранена).
+function userKeySeed(): string {
+  const jwt = getSessionToken()
+  if (!jwt) return "ourapp-anon"
+  try {
+    const payload = jwt.split(".")[1]
+    if (!payload) return "ourapp-anon"
+    const json = JSON.parse(decodeURIComponent(escape(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))))) as {
+      sub?: unknown
+    }
+    return typeof json.sub === "string" && json.sub ? `sub:${json.sub}` : "ourapp-anon"
+  } catch {
+    return "ourapp-anon"
+  }
+}
+
 function cipherKey(): number {
-  // Без JWT (не залогинен) — фиксированный seed: персист всё равно работает в рамках
-  // одной загрузки; при логине ключ станет JWT-зависимым.
-  const jwt = getSessionToken() ?? "ourapp-anon"
-  return cyrb53(jwt, 0x9e3779b1) >>> 0
+  return cyrb53(userKeySeed(), 0x9e3779b1) >>> 0
 }
 
 function xorBytes(bytes: Uint8Array, seed: number): Uint8Array {
