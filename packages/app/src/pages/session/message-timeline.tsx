@@ -46,6 +46,7 @@ import { useFileComponent } from "@opencode-ai/ui/context/file"
 import { shouldMarkBoundaryGesture, normalizeWheelDelta } from "@/pages/session/message-gesture"
 import { SessionContextUsage } from "@/components/session-context-usage"
 import { isDocxSession } from "@/ourapp/scenarios/docx-result-tracker"
+import { downloadMarkdownAsPdf } from "@/ourapp/pdf-export"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { useLanguage } from "@/context/language"
@@ -1075,22 +1076,30 @@ export function MessageTimeline(props: {
       return looksLikeDocument() || isDocxSession(sessionID() ?? "")
     })
 
-    const callExport = async (mode: "download" | "preview") => {
+    // Имя файла из первого markdown-заголовка документа (напр. «ДОГОВОР…»), иначе «документ».
+    const docFilename = () => {
+      const h = /^#{1,6}\s+(.+)$/m.exec(markdown())
+      const raw = (h?.[1] ?? "документ").replace(/[*_`]/g, "").trim()
+      return raw.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 60) || "документ"
+    }
+
+    // Предпросмотр: DOCX → HTML (mammoth) → панель, без скачивания.
+    const openPreview = async () => {
       if (busy()) return
       setBusy(true)
       setError(null)
       try {
-        const reg = (window as { ourappDocExport?: (md: string, opts: { showPreview?: boolean; skipDownload?: boolean }) => Promise<boolean> })
-          .ourappDocExport
+        const reg = (
+          window as {
+            ourappDocExport?: (md: string, opts: { showPreview?: boolean; skipDownload?: boolean }) => Promise<boolean>
+          }
+        ).ourappDocExport
         if (!reg) {
-          setError("Экспорт DOCX недоступен")
+          setError("Предпросмотр недоступен")
           return
         }
-        const ok = await reg(markdown(), {
-          showPreview: true,
-          skipDownload: mode === "preview",
-        })
-        if (!ok) setError("Не удалось создать DOCX")
+        const ok = await reg(markdown(), { showPreview: true, skipDownload: true })
+        if (!ok) setError("Не удалось открыть предпросмотр")
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       } finally {
@@ -1098,18 +1107,66 @@ export function MessageTimeline(props: {
       }
     }
 
-    const btnClass = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] border-[var(--color-hairline-strong,#D8D2C5)] bg-[var(--color-bg-surface,#fff)] hover:bg-[var(--color-bg-surface-alt,#F6F2EB)] text-[var(--color-text-secondary,#5C5852)] transition-colors disabled:opacity-50 disabled:cursor-wait"
+    // Скачивание документа файлом — единообразно для DOCX/PDF/MD (как на «Истории»).
+    const exportArtifact = async (format: "docx" | "pdf" | "md") => {
+      if (busy()) return
+      setBusy(true)
+      setError(null)
+      try {
+        const md = markdown()
+        const name = docFilename()
+        if (format === "md") {
+          const blob = new Blob([md], { type: "text/markdown;charset=utf-8" })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = name + ".md"
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        } else if (format === "pdf") {
+          if (!(await downloadMarkdownAsPdf(md, { title: name, filename: name }))) setError("Не удалось создать PDF")
+        } else {
+          const reg = (
+            window as {
+              ourappDocExport?: (md: string, opts: { showPreview?: boolean; skipDownload?: boolean }) => Promise<boolean>
+            }
+          ).ourappDocExport
+          if (!reg) {
+            setError("Экспорт DOCX недоступен")
+            return
+          }
+          if (!(await reg(md, { showPreview: false, skipDownload: false }))) setError("Не удалось создать DOCX")
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+      } finally {
+        setBusy(false)
+      }
+    }
+
+    const btnClass =
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[13px] border-[var(--color-hairline-strong,#D8D2C5)] bg-[var(--color-bg-surface,#fff)] hover:bg-[var(--color-bg-surface-alt,#F6F2EB)] text-[var(--color-text-secondary,#5C5852)] transition-colors disabled:opacity-50 disabled:cursor-wait"
 
     return (
       <Show when={hasContent()}>
-        <div data-component="ourapp-docx-button" class="flex items-center gap-2 px-3 pt-2 pb-1">
-          <button type="button" onClick={() => callExport("preview")} disabled={busy()} class={btnClass}>
+        <div data-component="ourapp-docx-button" class="flex flex-wrap items-center gap-2 px-3 pt-2 pb-1">
+          <button type="button" onClick={openPreview} disabled={busy()} class={btnClass}>
             <Icon name="open-file" size="small" />
             <span>Предпросмотр</span>
           </button>
-          <button type="button" onClick={() => callExport("download")} disabled={busy()} class={btnClass}>
+          <button type="button" onClick={() => exportArtifact("docx")} disabled={busy()} class={btnClass}>
             <Icon name="download" size="small" />
-            <span>{busy() ? "Создаём…" : "Скачать .docx"}</span>
+            <span>{busy() ? "Создаём…" : "DOCX"}</span>
+          </button>
+          <button type="button" onClick={() => exportArtifact("pdf")} disabled={busy()} class={btnClass}>
+            <Icon name="download" size="small" />
+            <span>PDF</span>
+          </button>
+          <button type="button" onClick={() => exportArtifact("md")} disabled={busy()} class={btnClass}>
+            <Icon name="download" size="small" />
+            <span>MD</span>
           </button>
           <Show when={error()}>
             <span class="text-[var(--color-error,#991B1B)] text-[12px]">{error()}</span>
