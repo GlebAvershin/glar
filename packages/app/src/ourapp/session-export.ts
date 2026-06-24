@@ -89,22 +89,14 @@ export async function downloadAsDocx(input: SessionExportInput): Promise<boolean
   })
 }
 
-/**
- * Экспорт в PDF через Electron webContents.printToPDF.
- * Делает renderer-print текущей страницы или невидимого окна с markdown.
- * На MVP — fallback к DOCX (Electron printToPDF сложно вынести на эту страницу).
- */
-export async function downloadAsPdf(input: SessionExportInput): Promise<boolean> {
-  // Попытка через Electron preload (если main выставит api.printToPDF).
-  if (typeof window !== "undefined" && "api" in window) {
-    const api = (window as { api?: { printToPDF?: (html: string) => Promise<ArrayBuffer | null> } }).api
-    if (api?.printToPDF) {
-      const md = buildSessionMarkdown(input)
-      // Простая HTML-обёртка для печати. Кириллица берётся из системных шрифтов.
-      const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${escapeHtml(
-        input.sessionTitle,
-      )}</title><style>
-        body{font-family:Onest,Arial,sans-serif;line-height:1.55;padding:32px;color:#1a1614;font-size:13px;}
+/** HTML-обёртка переписки для печати/PDF. Кириллица — из системных шрифтов (fallback'и). */
+function buildPrintHtml(input: SessionExportInput): string {
+  const md = buildSessionMarkdown(input)
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${escapeHtml(
+    input.sessionTitle,
+  )}</title><style>
+        @page{margin:18mm;}
+        body{font-family:Onest,Arial,sans-serif;line-height:1.55;padding:0;color:#1a1614;font-size:13px;}
         h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:500;letter-spacing:-0.02em;font-size:24px;}
         h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:500;margin-top:24px;font-size:19px;}
         h3{font-family:"IBM Plex Serif",Georgia,serif;font-weight:500;margin-top:18px;font-size:16px;}
@@ -119,21 +111,93 @@ export async function downloadAsPdf(input: SessionExportInput): Promise<boolean>
         th{background:#f6f2eb;font-weight:600;}
         p{margin:8px 0;}
       </style></head><body>${markdownToHtml(md)}</body></html>`
+}
+
+/**
+ * Печать HTML как PDF через нативный print-движок браузера (скрытый iframe).
+ * Юзер получает системный диалог «Сохранить как PDF»: выделяемый текст, корректная
+ * кириллица и пагинация — без зависимостей. Имя файла — из <title> документа. iframe
+ * (в отличие от window.open) не требует user-gesture → работает после async-загрузки
+ * сообщений истории.
+ */
+function printViaIframe(html: string): boolean {
+  if (typeof document === "undefined") return false
+  const iframe = document.createElement("iframe")
+  iframe.setAttribute("aria-hidden", "true")
+  Object.assign(iframe.style, {
+    position: "fixed",
+    right: "0",
+    bottom: "0",
+    width: "0",
+    height: "0",
+    border: "0",
+    visibility: "hidden",
+  })
+  document.body.appendChild(iframe)
+  const cw = iframe.contentWindow
+  const doc = cw?.document
+  if (!cw || !doc) {
+    iframe.remove()
+    return false
+  }
+  doc.open()
+  doc.write(html)
+  doc.close()
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    try {
+      iframe.remove()
+    } catch {}
+  }
+  const run = () => {
+    try {
+      cw.focus()
+      cw.addEventListener?.("afterprint", () => setTimeout(cleanup, 100), { once: true })
+      cw.print()
+    } catch {
+      cleanup()
+    }
+    setTimeout(cleanup, 60_000)
+  }
+  if (doc.readyState === "complete") setTimeout(run, 150)
+  else iframe.onload = () => setTimeout(run, 150)
+  return true
+}
+
+/**
+ * Экспорт в PDF. Desktop (Electron) — тихое скачивание через webContents.printToPDF.
+ * Веб — нативная печать в PDF (системный диалог «Сохранить как PDF»). DOCX — только
+ * крайний фолбэк, если ни один путь недоступен (напр. не-браузерная среда).
+ */
+export async function downloadAsPdf(input: SessionExportInput): Promise<boolean> {
+  const html = buildPrintHtml(input)
+
+  // Desktop: тихое скачивание .pdf через Electron preload (api.printToPDF).
+  if (typeof window !== "undefined" && "api" in window) {
+    const api = (window as { api?: { printToPDF?: (html: string) => Promise<ArrayBuffer | null> } }).api
+    if (api?.printToPDF) {
       const buf = await api.printToPDF(html)
-      if (!buf) return false
-      const blob = new Blob([buf], { type: "application/pdf" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = (input.sessionTitle.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 60) || "сессия") + ".pdf"
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      return true
+      if (buf) {
+        const blob = new Blob([buf], { type: "application/pdf" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = (input.sessionTitle.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 60) || "сессия") + ".pdf"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        return true
+      }
     }
   }
-  // Fallback: DOCX (юзер сам конвертирует в PDF).
+
+  // Веб: печать в PDF через системный диалог браузера.
+  if (printViaIframe(html)) return true
+
+  // Крайний фолбэк (не-браузерная среда) — DOCX.
   return downloadAsDocx(input)
 }
 
