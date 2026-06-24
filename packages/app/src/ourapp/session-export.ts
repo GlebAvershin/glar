@@ -9,6 +9,7 @@
  */
 import type { Message, Part, TextPart } from "@opencode-ai/sdk/v2"
 import { downloadMarkdownAsDocx } from "./doc-export"
+import { downloadMarkdownAsPdf } from "./pdf-export"
 
 export interface SessionExportInput {
   sessionTitle: string
@@ -114,71 +115,17 @@ function buildPrintHtml(input: SessionExportInput): string {
 }
 
 /**
- * Печать HTML как PDF через нативный print-движок браузера (скрытый iframe).
- * Юзер получает системный диалог «Сохранить как PDF»: выделяемый текст, корректная
- * кириллица и пагинация — без зависимостей. Имя файла — из <title> документа. iframe
- * (в отличие от window.open) не требует user-gesture → работает после async-загрузки
- * сообщений истории.
- */
-function printViaIframe(html: string): boolean {
-  if (typeof document === "undefined") return false
-  const iframe = document.createElement("iframe")
-  iframe.setAttribute("aria-hidden", "true")
-  Object.assign(iframe.style, {
-    position: "fixed",
-    right: "0",
-    bottom: "0",
-    width: "0",
-    height: "0",
-    border: "0",
-    visibility: "hidden",
-  })
-  document.body.appendChild(iframe)
-  const cw = iframe.contentWindow
-  const doc = cw?.document
-  if (!cw || !doc) {
-    iframe.remove()
-    return false
-  }
-  doc.open()
-  doc.write(html)
-  doc.close()
-  let cleaned = false
-  const cleanup = () => {
-    if (cleaned) return
-    cleaned = true
-    try {
-      iframe.remove()
-    } catch {}
-  }
-  const run = () => {
-    try {
-      cw.focus()
-      cw.addEventListener?.("afterprint", () => setTimeout(cleanup, 100), { once: true })
-      cw.print()
-    } catch {
-      cleanup()
-    }
-    setTimeout(cleanup, 60_000)
-  }
-  if (doc.readyState === "complete") setTimeout(run, 150)
-  else iframe.onload = () => setTimeout(run, 150)
-  return true
-}
-
-/**
- * Экспорт в PDF. Desktop (Electron) — тихое скачивание через webContents.printToPDF.
- * Веб — нативная печать в PDF (системный диалог «Сохранить как PDF»). DOCX — только
- * крайний фолбэк, если ни один путь недоступен (напр. не-браузерная среда).
+ * Экспорт в PDF — СКАЧИВАНИЕ ФАЙЛОМ (молча, единообразно с DOCX/MD).
+ * Desktop (Electron) — тихое скачивание через webContents.printToPDF. Веб — клиентская
+ * генерация PDF (pdfmake, выделяемый текст + кириллица). DOCX — крайний фолбэк, если оба
+ * пути недоступны (напр. не-браузерная среда / сбой pdfmake).
  */
 export async function downloadAsPdf(input: SessionExportInput): Promise<boolean> {
-  const html = buildPrintHtml(input)
-
   // Desktop: тихое скачивание .pdf через Electron preload (api.printToPDF).
   if (typeof window !== "undefined" && "api" in window) {
     const api = (window as { api?: { printToPDF?: (html: string) => Promise<ArrayBuffer | null> } }).api
     if (api?.printToPDF) {
-      const buf = await api.printToPDF(html)
+      const buf = await api.printToPDF(buildPrintHtml(input))
       if (buf) {
         const blob = new Blob([buf], { type: "application/pdf" })
         const url = URL.createObjectURL(blob)
@@ -194,10 +141,11 @@ export async function downloadAsPdf(input: SessionExportInput): Promise<boolean>
     }
   }
 
-  // Веб: печать в PDF через системный диалог браузера.
-  if (printViaIframe(html)) return true
+  // Веб: клиентская генерация PDF (pdfmake) — молчаливое скачивание, как DOCX/MD.
+  if (await downloadMarkdownAsPdf(buildSessionMarkdown(input), { title: input.sessionTitle, filename: input.sessionTitle }))
+    return true
 
-  // Крайний фолбэк (не-браузерная среда) — DOCX.
+  // Крайний фолбэк — DOCX.
   return downloadAsDocx(input)
 }
 
