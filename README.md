@@ -1,3 +1,22 @@
+<!-- ─────────────────────────────────────────────────────────────────────────
+ПАРАГРАФ (glar) — наш форк opencode: веб-рендерер ИИ-агента для юристов/бухгалтеров.
+
+Что это: UI на SolidJS (форк opencode), работает против НАШЕГО бэкенда (engine), а не
+сайдкара opencode. Наш продуктовый код — в `packages/app/src/ourapp/` (онбординг/OTP,
+сценарии, PII-маскирование + OCR, авто-модель, «Углублённо», биллинг-страницы, экспорт
+DOCX/PDF/MD) + точечные патчи в файлах opencode. ~89% — UI opencode, ~11% — наш слой.
+
+Запуск (нужен bun + поднятый бэкенд):
+  make dev      # рендерер, vite :5173 (= bun run dev:web)
+  make build    # статика для прода → packages/app/dist
+  make help     # все команды
+Бэкенд (engine/billing) — отдельный репо paragraf-monorepo (`make up`). Шлюз LLM —
+paragraf-gateway. Деплой и связка URL-ов — в paragraf-monorepo/DEPLOY.md.
+
+upstream: github.com/anomalyco/opencode (форк синхронизируется через remote `upstream`).
+Ниже — оригинальный README opencode.
+────────────────────────────────────────────────────────────────────────── -->
+
 <p align="center">
   <a href="https://opencode.ai">
     <picture>
