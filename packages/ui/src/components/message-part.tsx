@@ -1131,7 +1131,16 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
     () => props.parts?.find((p) => p.type === "text" && !(p as TextPart).synthetic) as TextPart | undefined,
   )
 
-  const rawText = createMemo(() => textPart()?.text || "")
+  // OurApp: демаскируем текст сообщения ЮЗЕРА так же, как в ответах ассистента
+  // (window.ourappUnmask). После перезагрузки text part приходит из БД движка с
+  // плейсхолдерами (__PII_FIO_1__) — без этого юзер видел бы метки в своих же вопросах.
+  // Демаск до извлечения [Документ:…]-блоков, чтобы и они работали по реальному тексту.
+  const rawText = createMemo(() => {
+    const raw = textPart()?.text || ""
+    if (!raw) return raw
+    const fn = (typeof window !== "undefined" ? window : undefined)?.ourappUnmask
+    return typeof fn === "function" ? fn(raw, props.message.sessionID) : raw
+  })
 
   // OurApp: text может содержать inline-блоки документов из локального парсера:
   //   [Документ: имя.docx]\n\n<содержимое>\n\n[Конец документа]\n
